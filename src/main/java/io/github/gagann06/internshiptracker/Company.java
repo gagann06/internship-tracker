@@ -1,0 +1,57 @@
+package io.github.gagann06.internshiptracker;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import java.time.Instant;
+
+@Entity
+@Table(name = "companies")
+public class Company {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String name;
+    private String industry;
+    private Instant createdAt;
+
+    protected Company() {
+        // Required by JPA - Hibernate instantiates empty then populates fields
+    }
+
+    public Company(String name) {
+        this(name, null);
+    }
+
+    public Company(String name, String industry) {
+        this.name = name;
+        this.industry = industry;
+        this.createdAt = Instant.now();
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getIndustry() {
+        return industry;
+    }
+
+    public void setIndustry(String industry) {
+        this.industry = industry;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }   
+}
