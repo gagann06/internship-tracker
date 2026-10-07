@@ -65,7 +65,7 @@ class ApplicationServiceTest {
 
     @Test
     void getApplicationThrowsWhenIdDoesNotExist() {
-        when(applicationRepository.findById(99L)).thenReturn(Optional.empty());
+        when(applicationRepository.findByIdWithCompany(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> applicationService.getApplication(99L))
                 .isInstanceOf(ApplicationNotFoundException.class);
@@ -75,7 +75,7 @@ class ApplicationServiceTest {
     void updateThrowsWhenCompanyDoesNotExistAndLeavesApplicationUnchanged() {
         Company goldman = new Company("Goldman Sachs");
         Application existing = new Application(goldman, "Summer Analyst");
-        when(applicationRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(applicationRepository.findByIdWithCompany(1L)).thenReturn(Optional.of(existing));
         when(companyRepository.findById(999L)).thenReturn(Optional.empty());
         ApplicationRequest request = new ApplicationRequest(999L, "Changed", null, null, null);
 
@@ -92,7 +92,7 @@ class ApplicationServiceTest {
         Application existing = new Application(goldman, "Summer Analyst");
         existing.setBusinessStream("Technology");
         existing.setDeadline(LocalDate.of(2026, 11, 15));
-        when(applicationRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(applicationRepository.findByIdWithCompany(1L)).thenReturn(Optional.of(existing));
         when(companyRepository.findById(2L)).thenReturn(Optional.of(janeStreet));
         ApplicationRequest request = new ApplicationRequest(2L, "  SWE Intern  ", null, null, null);
 

@@ -37,7 +37,7 @@ public class ApplicationService {
 
     @Transactional(readOnly = true)
     public Application getApplication(Long id) {
-        return applicationRepository.findById(id)
+        return applicationRepository.findByIdWithCompany(id)
             .orElseThrow(() -> new ApplicationNotFoundException(id));
     }
 

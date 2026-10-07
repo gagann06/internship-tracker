@@ -106,6 +106,16 @@ public class ApplicationControllerIntegrationTest {
     }
 
     @Test
+    void getExistingApplicationReturns200WithItsCompanyName() {
+        Company goldman = companyRepository.save(new Company("Goldman Sachs"));
+        Application application = applicationRepository.save(new Application(goldman, "Summer Analyst"));
+
+        assertThat(mvc.get().uri("/api/applications/{id}", application.getId()))
+                .hasStatusOk()
+                .bodyJson().extractingPath("$.companyName").isEqualTo("Goldman Sachs");
+    }
+
+    @Test
     void getMissingApplicationReturns404() {
         assertThat(mvc.get().uri("/api/applications/{id}", 999))
                 .hasStatus(HttpStatus.NOT_FOUND)
