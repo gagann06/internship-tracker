@@ -53,8 +53,7 @@ public class CompanyServiceTest {
     void getCompanyThrowsWhenIdDoesNotExist() {
         when(companyRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> companyService.getCompany(99L))
-                .isInstanceOf(CompanyNotFoundException.class);
+        assertThatThrownBy(() -> companyService.getCompany(99L)).isInstanceOf(CompanyNotFoundException.class);
     }
 
     @Test
@@ -63,8 +62,7 @@ public class CompanyServiceTest {
         when(companyRepository.findById(1L)).thenReturn(Optional.of(existing));
         when(companyRepository.existsByNameIgnoreCaseAndIdNot("Morgan Stanley", 1L)).thenReturn(true);
 
-        assertThatThrownBy(() -> companyService.update(1L, "Morgan Stanley", "Investment Banking"))
-                .isInstanceOf(DuplicateCompanyNameException.class);
+        assertThatThrownBy(() -> companyService.update(1L, "Morgan Stanley", "Investment Banking")).isInstanceOf(DuplicateCompanyNameException.class);
         assertThat(existing.getName()).isEqualTo("Goldman Sachs");
     }
 
@@ -72,8 +70,7 @@ public class CompanyServiceTest {
     void deleteThrowsWhenIdDoesNotExistAndDeletesNothing() {
         when(companyRepository.existsById(99L)).thenReturn(false);
 
-        assertThatThrownBy(() -> companyService.delete(99L))
-                .isInstanceOf(CompanyNotFoundException.class);
+        assertThatThrownBy(() -> companyService.delete(99L)).isInstanceOf(CompanyNotFoundException.class);
         verify(companyRepository, never()).deleteById(any());
     }
 }
