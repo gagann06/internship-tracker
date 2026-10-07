@@ -1,4 +1,4 @@
-package io.github.gagann06.internshiptracker;
+package io.github.gagann06.internshiptracker.application;
 
 public class UnknownCompanyException extends RuntimeException {
 

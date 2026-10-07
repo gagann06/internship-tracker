@@ -1,4 +1,4 @@
-package io.github.gagann06.internshiptracker;
+package io.github.gagann06.internshiptracker.company;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;

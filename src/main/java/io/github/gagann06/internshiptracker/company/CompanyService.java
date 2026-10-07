@@ -1,4 +1,6 @@
-package io.github.gagann06.internshiptracker;
+package io.github.gagann06.internshiptracker.company;
+
+import io.github.gagann06.internshiptracker.application.ApplicationRepository;
 
 import java.util.List;
 

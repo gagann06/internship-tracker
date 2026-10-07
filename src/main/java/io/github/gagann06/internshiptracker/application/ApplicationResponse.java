@@ -1,4 +1,4 @@
-package io.github.gagann06.internshiptracker;
+package io.github.gagann06.internshiptracker.application;
 import java.time.Instant;
 import java.time.LocalDate;
 

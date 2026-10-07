@@ -1,4 +1,11 @@
-package io.github.gagann06.internshiptracker;
+package io.github.gagann06.internshiptracker.common;
+
+import io.github.gagann06.internshiptracker.application.ApplicationNotFoundException;
+import io.github.gagann06.internshiptracker.application.StatusUnchangedException;
+import io.github.gagann06.internshiptracker.application.UnknownCompanyException;
+import io.github.gagann06.internshiptracker.company.CompanyHasApplicationsException;
+import io.github.gagann06.internshiptracker.company.CompanyNotFoundException;
+import io.github.gagann06.internshiptracker.company.DuplicateCompanyNameException;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;

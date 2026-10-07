@@ -1,4 +1,7 @@
-package io.github.gagann06.internshiptracker;
+package io.github.gagann06.internshiptracker.company;
+
+import io.github.gagann06.internshiptracker.application.ApplicationRepository;
+import io.github.gagann06.internshiptracker.TestcontainersConfiguration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

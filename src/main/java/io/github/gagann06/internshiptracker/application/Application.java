@@ -1,4 +1,6 @@
-package io.github.gagann06.internshiptracker;
+package io.github.gagann06.internshiptracker.application;
+
+import io.github.gagann06.internshiptracker.company.Company;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;

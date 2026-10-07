@@ -1,4 +1,4 @@
-package io.github.gagann06.internshiptracker;
+package io.github.gagann06.internshiptracker.application;
 
 public enum ApplicationStatus {
     TO_APPLY,
