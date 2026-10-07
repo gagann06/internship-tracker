@@ -13,4 +13,6 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
 
     @Query("select a from Application a join fetch a.company where a.id = :id")
     Optional<Application> findByIdWithCompany(@Param("id") Long id);
+
+    boolean existsByCompanyId(Long companyId);
 }

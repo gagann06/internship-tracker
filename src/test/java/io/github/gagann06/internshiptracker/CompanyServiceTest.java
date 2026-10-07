@@ -24,11 +24,14 @@ public class CompanyServiceTest {
     @Mock
     CompanyRepository companyRepository;
 
+    @Mock 
+    ApplicationRepository applicationRepository;
+
     CompanyService companyService;
 
     @BeforeEach
     void setUp() {
-        companyService = new CompanyService(companyRepository);
+        companyService = new CompanyService(companyRepository, applicationRepository);
     }
 
     @Test 
@@ -72,5 +75,24 @@ public class CompanyServiceTest {
 
         assertThatThrownBy(() -> companyService.delete(99L)).isInstanceOf(CompanyNotFoundException.class);
         verify(companyRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void deleteThrowsWhenCompanyStillHasApplicationsAndDeletesNothing() {
+        when(companyRepository.existsById(1L)).thenReturn(true);
+        when(applicationRepository.existsByCompanyId(1L)).thenReturn(true);
+
+        assertThatThrownBy(() -> companyService.delete(1L)).isInstanceOf(CompanyHasApplicationsException.class);
+        verify(companyRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void deleteRemovesCompanyWithNoApplications() {
+        when(companyRepository.existsById(1L)).thenReturn(true);
+        when(applicationRepository.existsByCompanyId(1L)).thenReturn(false);
+
+        companyService.delete(1L);
+
+        verify(companyRepository).deleteById(1L);
     }
 }

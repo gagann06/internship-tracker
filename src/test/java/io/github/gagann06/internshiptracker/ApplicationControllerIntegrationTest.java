@@ -182,7 +182,9 @@ public class ApplicationControllerIntegrationTest {
         applicationRepository.save(new Application(goldman, "Summer Analyst"));
 
         assertThat(mvc.delete().uri("/api/companies/{id}", goldman.getId()))
-                .hasStatus(HttpStatus.CONFLICT);
+                .hasStatus(HttpStatus.CONFLICT)
+                .bodyJson().extractingPath("$.detail")
+                .isEqualTo("Company " + goldman.getId() + " still has applications that need to be deleted first");
         assertThat(companyRepository.existsById(goldman.getId())).isTrue();
     }
 }

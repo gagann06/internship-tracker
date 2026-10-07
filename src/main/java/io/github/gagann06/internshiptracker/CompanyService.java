@@ -9,9 +9,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class CompanyService {
 
     private final CompanyRepository companyRepository;
+    private final ApplicationRepository applicationRepository;
 
-    public CompanyService(CompanyRepository companyRepository) {
+    public CompanyService(CompanyRepository companyRepository, ApplicationRepository applicationRepository) {
         this.companyRepository = companyRepository;
+        this.applicationRepository = applicationRepository;
     }
 
     @Transactional 
@@ -56,6 +58,10 @@ public class CompanyService {
     public void delete(Long id) {
         if (!companyRepository.existsById(id)) {
             throw new CompanyNotFoundException(id);
+        }
+
+        if (applicationRepository.existsByCompanyId(id)) {
+            throw new CompanyHasApplicationsException(id);
         }
         companyRepository.deleteById(id);
     }

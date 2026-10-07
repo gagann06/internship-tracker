@@ -33,4 +33,9 @@ public class ApiExceptionHandler {
     public ProblemDetail applicationNotFound(ApplicationNotFoundException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND,ex.getMessage());
     }
+
+    @ExceptionHandler(CompanyHasApplicationsException.class)
+    public ProblemDetail companyHasApplications(CompanyHasApplicationsException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,ex.getMessage());
+    }
 }
