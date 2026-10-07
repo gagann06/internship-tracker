@@ -25,8 +25,12 @@ public class CompanyControllerIntegrationTest {
     @Autowired
     CompanyRepository companyRepository;
 
+    @Autowired
+    ApplicationRepository applicationRepository;
+
     @BeforeEach
     void cleanDatabase() {
+        applicationRepository.deleteAll();
         companyRepository.deleteAll();
     }
 
