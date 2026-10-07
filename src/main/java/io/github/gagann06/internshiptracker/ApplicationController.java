@@ -59,6 +59,11 @@ public class ApplicationController {
         return ApplicationResponse.from(application);    
     }
 
+    @PostMapping("/{id}/status") 
+    public ApplicationResponse status(@PathVariable Long id, @Valid @RequestBody StatusChangeRequest request) {
+        Application application = applicationService.changeStatus(id, request.status(), request.note());
+        return ApplicationResponse.from(application);
+    }
     
     
 }

@@ -64,4 +64,12 @@ public class ApplicationService {
         }
         applicationRepository.deleteById(id);
     }
+
+    @Transactional 
+    public Application changeStatus(Long id, ApplicationStatus newStatus, String note) {
+        Application application = getApplication(id);
+        application.changeStatus(newStatus, note);
+        
+        return application;
+    }
 }

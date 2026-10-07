@@ -38,4 +38,9 @@ public class ApiExceptionHandler {
     public ProblemDetail companyHasApplications(CompanyHasApplicationsException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,ex.getMessage());
     }
+
+    @ExceptionHandler(StatusUnchangedException.class)
+    public ProblemDetail applicationStatusUnchanged(StatusUnchangedException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+    }
 }

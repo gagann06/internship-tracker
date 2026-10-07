@@ -71,6 +71,99 @@ public class ApplicationControllerIntegrationTest {
     }
 
     @Test
+    void newApplicationStartsAtToApply() {
+        Company company = companyRepository.save(new Company("Goldman Sachs"));
+
+        assertThat(mvc.post().uri("/api/applications")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"companyId": %d, "roleTitle": "SWE Intern"}
+                        """.formatted(company.getId())))
+                .hasStatus(HttpStatus.CREATED)
+                .bodyJson().extractingPath("$.status").isEqualTo("TO_APPLY");
+    }
+
+    @Test
+    void changeStatusReturnsNewStatusAndAppendsHistory() {
+        Company goldman = companyRepository.save(new Company("Goldman Sachs"));
+        Application application = applicationRepository.save(new Application(goldman, "Summer Analyst"));
+
+        assertThat(mvc.post().uri("/api/applications/{id}/status", application.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"status": "APPLIED", "note": "Submitted via careers site"}
+                        """))
+                .hasStatusOk()
+                .bodyJson().extractingPath("$.status").isEqualTo("APPLIED");
+
+        Long appendedEntries = jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM status_changes WHERE application_id = ?"
+                        + " AND from_status = 'TO_APPLY' AND to_status = 'APPLIED'"
+                        + " AND note = 'Submitted via careers site'",
+                Long.class, application.getId());
+        Long totalEntries = jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM status_changes WHERE application_id = ?",
+                Long.class, application.getId());
+        assertThat(appendedEntries).isEqualTo(1);
+        assertThat(totalEntries).isEqualTo(2);
+    }
+
+    @Test
+    void changeToTheCurrentStatusReturns409AndRecordsNothing() {
+        Company goldman = companyRepository.save(new Company("Goldman Sachs"));
+        Application application = applicationRepository.save(new Application(goldman, "Summer Analyst"));
+
+        assertThat(mvc.post().uri("/api/applications/{id}/status", application.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"status": "TO_APPLY"}
+                        """))
+                .hasStatus(HttpStatus.CONFLICT)
+                .bodyJson().extractingPath("$.detail").isEqualTo("The current status is already TO_APPLY");
+
+        Long totalEntries = jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM status_changes WHERE application_id = ?",
+                Long.class, application.getId());
+        assertThat(totalEntries).isEqualTo(1);
+    }
+
+    @Test
+    void changeStatusToUnknownValueReturns400() {
+        Company goldman = companyRepository.save(new Company("Goldman Sachs"));
+        Application application = applicationRepository.save(new Application(goldman, "Summer Analyst"));
+
+        assertThat(mvc.post().uri("/api/applications/{id}/status", application.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"status": "INTERVIEWING"}
+                        """))
+                .hasStatus(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    void changeStatusWithoutStatusReturns400() {
+        Company goldman = companyRepository.save(new Company("Goldman Sachs"));
+        Application application = applicationRepository.save(new Application(goldman, "Summer Analyst"));
+
+        assertThat(mvc.post().uri("/api/applications/{id}/status", application.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"note": "forgot the status"}
+                        """))
+                .hasStatus(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    void changeStatusOfMissingApplicationReturns404() {
+        assertThat(mvc.post().uri("/api/applications/{id}/status", 999)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"status": "APPLIED"}
+                        """))
+                .hasStatus(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
     void createTrimsRoleTitleAndStoresOptionalFields() {
         Company company = companyRepository.save(new Company("Goldman Sachs"));
 

@@ -54,6 +54,9 @@ public class Application {
     }
 
     public void changeStatus(ApplicationStatus newStatus, String note) {
+        if (this.status == newStatus) {
+            throw new StatusUnchangedException(newStatus);
+        }
         statusChanges.add(new StatusChange(this, this.status, newStatus, note));
         this.status = newStatus;
     }

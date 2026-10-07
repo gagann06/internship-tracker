@@ -2,7 +2,7 @@ package io.github.gagann06.internshiptracker;
 import java.time.Instant;
 import java.time.LocalDate;
 
-public record ApplicationResponse(Long id, Long companyId, String companyName, String roleTitle, String businessStream, LocalDate appliedDate, LocalDate deadline, Instant createdAt) {
+public record ApplicationResponse(Long id, Long companyId, String companyName, String roleTitle, String businessStream, LocalDate appliedDate, LocalDate deadline, Instant createdAt, ApplicationStatus status) {
 
     public static ApplicationResponse from(Application application) {
         return new ApplicationResponse(application.getId(),
@@ -12,6 +12,7 @@ public record ApplicationResponse(Long id, Long companyId, String companyName, S
                 application.getBusinessStream(),
                 application.getAppliedDate(),
                 application.getDeadline(),
-                application.getCreatedAt());
+                application.getCreatedAt(),
+                application.getStatus());
     }
 }
