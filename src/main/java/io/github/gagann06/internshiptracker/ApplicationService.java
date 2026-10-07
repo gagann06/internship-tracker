@@ -32,7 +32,7 @@ public class ApplicationService {
 
     @Transactional(readOnly = true)
     public List<Application> listAll() {
-        return applicationRepository.findAll();
+        return applicationRepository.findAllWithCompany();
     }
 
     @Transactional(readOnly = true)
