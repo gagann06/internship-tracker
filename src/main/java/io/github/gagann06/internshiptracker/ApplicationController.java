@@ -65,5 +65,9 @@ public class ApplicationController {
         return ApplicationResponse.from(application);
     }
     
-    
+    @GetMapping("/{id}/status-changes")
+    public List<StatusChangeResponse> getHistory(@PathVariable Long id) {
+        List<StatusChange> history = applicationService.getHistory(id);
+            return history.stream().map(s -> StatusChangeResponse.from(s)).toList();
+    }
 }

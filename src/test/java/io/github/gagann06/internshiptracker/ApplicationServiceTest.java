@@ -25,11 +25,14 @@ class ApplicationServiceTest {
     @Mock
     CompanyRepository companyRepository;
 
+    @Mock
+    StatusChangeRepository statusChangeRepository;
+
     ApplicationService applicationService;
 
     @BeforeEach
     void setUp() {
-        applicationService = new ApplicationService(applicationRepository, companyRepository);
+        applicationService = new ApplicationService(applicationRepository, companyRepository, statusChangeRepository);
     }
 
     @Test
@@ -102,6 +105,15 @@ class ApplicationServiceTest {
         assertThat(updated.getRoleTitle()).isEqualTo("SWE Intern");
         assertThat(updated.getBusinessStream()).isNull();
         assertThat(updated.getDeadline()).isNull();
+    }
+
+    @Test
+    void getHistoryThrowsWhenApplicationDoesNotExistAndQueriesNothing() {
+        when(applicationRepository.existsById(99L)).thenReturn(false);
+
+        assertThatThrownBy(() -> applicationService.getHistory(99L))
+                .isInstanceOf(ApplicationNotFoundException.class);
+        verify(statusChangeRepository, never()).findByApplicationIdOrderByChangedAtAscIdAsc(any());
     }
 
     @Test

@@ -164,6 +164,57 @@ public class ApplicationControllerIntegrationTest {
     }
 
     @Test
+    void historyReturnsEveryChangeOldestFirst() {
+        Company goldman = companyRepository.save(new Company("Goldman Sachs"));
+        Application application = applicationRepository.save(new Application(goldman, "Summer Analyst"));
+        changeStatus(application.getId(), "APPLIED", "Submitted");
+        changeStatus(application.getId(), "ONLINE_ASSESSMENT", null);
+
+        assertThat(mvc.get().uri("/api/applications/{id}/status-changes", application.getId()))
+                .hasStatusOk()
+                .bodyJson()
+                .satisfies(json -> {
+                    assertThat(json).extractingPath("$.length()").isEqualTo(3);
+                    assertThat(json).extractingPath("$[*].toStatus").asArray()
+                            .containsExactly("TO_APPLY", "APPLIED", "ONLINE_ASSESSMENT");
+                    assertThat(json).extractingPath("$[0].fromStatus").isNull();
+                    assertThat(json).extractingPath("$[1].fromStatus").isEqualTo("TO_APPLY");
+                    assertThat(json).extractingPath("$[1].note").isEqualTo("Submitted");
+                });
+    }
+
+    @Test
+    void historyOfMissingApplicationReturns404NotAnEmptyList() {
+        assertThat(mvc.get().uri("/api/applications/{id}/status-changes", 999))
+                .hasStatus(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void deletingAnApplicationRemovesItsHistory() {
+        Company goldman = companyRepository.save(new Company("Goldman Sachs"));
+        Application application = applicationRepository.save(new Application(goldman, "Summer Analyst"));
+        changeStatus(application.getId(), "APPLIED", null);
+
+        assertThat(mvc.delete().uri("/api/applications/{id}", application.getId()))
+                .hasStatus(HttpStatus.NO_CONTENT);
+
+        Long remaining = jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM status_changes WHERE application_id = ?",
+                Long.class, application.getId());
+        assertThat(remaining).isZero();
+    }
+
+    private void changeStatus(Long applicationId, String status, String note) {
+        String noteJson = note == null ? "null" : "\"" + note + "\"";
+        assertThat(mvc.post().uri("/api/applications/{id}/status", applicationId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"status": "%s", "note": %s}
+                        """.formatted(status, noteJson)))
+                .hasStatusOk();
+    }
+
+    @Test
     void createTrimsRoleTitleAndStoresOptionalFields() {
         Company company = companyRepository.save(new Company("Goldman Sachs"));
 

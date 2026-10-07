@@ -8,12 +8,14 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class ApplicationService {
     
+    private final StatusChangeRepository statusChangeRepository;
     private final ApplicationRepository applicationRepository;
     private final CompanyRepository companyRepository;
 
-    public ApplicationService(ApplicationRepository applicationRepository, CompanyRepository companyRepository) {
+    public ApplicationService(ApplicationRepository applicationRepository, CompanyRepository companyRepository, StatusChangeRepository statusChangeRepository) {
         this.applicationRepository = applicationRepository;
         this.companyRepository = companyRepository;
+        this.statusChangeRepository = statusChangeRepository;
     }
 
     @Transactional 
@@ -69,7 +71,15 @@ public class ApplicationService {
     public Application changeStatus(Long id, ApplicationStatus newStatus, String note) {
         Application application = getApplication(id);
         application.changeStatus(newStatus, note);
-        
+
         return application;
+    }
+
+    @Transactional(readOnly = true)
+    public List<StatusChange> getHistory(Long id) {
+        if (!applicationRepository.existsById(id)) {
+            throw new ApplicationNotFoundException(id);
+        }
+        return statusChangeRepository.findByApplicationIdOrderByChangedAtAscIdAsc(id);
     }
 }
