@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -28,6 +29,9 @@ public class ApplicationControllerIntegrationTest {
     @Autowired
     ApplicationRepository applicationRepository;
 
+    @Autowired
+    JdbcTemplate jdbcTemplate;
+
     @BeforeEach
     void cleanDatabase() {
         applicationRepository.deleteAll();
@@ -45,6 +49,25 @@ public class ApplicationControllerIntegrationTest {
                         """.formatted(company.getId())))
                 .hasStatus(HttpStatus.CREATED)
                 .bodyJson().extractingPath("$.companyName").isEqualTo("Goldman Sachs");
+    }
+
+    @Test
+    void createRecordsTheStartingStatusInTheHistory() {
+        Company company = companyRepository.save(new Company("Goldman Sachs"));
+
+        assertThat(mvc.post().uri("/api/applications")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"companyId": %d, "roleTitle": "SWE Intern"}
+                        """.formatted(company.getId())))
+                .hasStatus(HttpStatus.CREATED);
+
+        Long applicationId = applicationRepository.findAll().get(0).getId();
+        Long startingEntries = jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM status_changes"
+                        + " WHERE application_id = ? AND from_status IS NULL AND to_status = 'TO_APPLY'",
+                Long.class, applicationId);
+        assertThat(startingEntries).isEqualTo(1);
     }
 
     @Test
