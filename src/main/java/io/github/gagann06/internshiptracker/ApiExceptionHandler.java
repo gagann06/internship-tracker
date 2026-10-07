@@ -23,4 +23,14 @@ public class ApiExceptionHandler {
     public ProblemDetail dataViolation(DataIntegrityViolationException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "This request conflicts with existing data.");
     }
+
+    @ExceptionHandler(UnknownCompanyException.class)
+    public ProblemDetail unknownCompany(UnknownCompanyException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,ex.getMessage());
+    }
+
+    @ExceptionHandler(ApplicationNotFoundException.class)
+    public ProblemDetail applicationNotFound(ApplicationNotFoundException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND,ex.getMessage());
+    }
 }
