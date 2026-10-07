@@ -2,9 +2,12 @@ package io.github.gagann06.internshiptracker;
 
 import jakarta.validation.Valid;
 import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,9 +34,31 @@ public class CompanyController {
     }
 
     @GetMapping()
-    public List<CompanyResponse> list() {
+    public List<CompanyResponse> listCompanies() {
         List<Company> companies = companyService.listAll();
         return companies.stream().map(company -> CompanyResponse.from(company)).toList();
     }
+
+    @GetMapping("/{id}")
+    public CompanyResponse getCompany(@PathVariable Long id) {
+        Company company = companyService.getCompany(id);
+
+        return CompanyResponse.from(company);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        companyService.delete(id);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}")
+    public CompanyResponse update(@Valid @RequestBody CompanyRequest request, @PathVariable Long id) {
+        Company company = companyService.update(id, request.name(), request.industry());
+        return CompanyResponse.from(company);    
+    }
+
+    
     
 }
