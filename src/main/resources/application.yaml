@@ -1,6 +1,9 @@
 spring:
   application:
     name: internship-tracker
+  mvc:
+    problemdetails:
+      enabled: true
   jpa:
     hibernate:
       ddl-auto: validate
