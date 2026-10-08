@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 
 @Service 
@@ -53,5 +54,14 @@ public class StatsService {
         }
 
         return steps;
+    }
+
+    @Transactional(readOnly = true)
+    public StatsResponse statsFor(Long userId) {
+        List<TransitionTime> times = statsRepository.averageTimeBetweenStatuses(userId).stream()
+        .sorted(Comparator.comparing(TransitionTime::getFromStatus)
+                .thenComparing(TransitionTime::getToStatus))
+        .toList();
+        return new StatsResponse(funnel(userId), times, applicationsPerCompany(userId));
     }
 }
