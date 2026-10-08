@@ -1,5 +1,9 @@
 package io.github.gagann06.internshiptracker.application;
 
+import java.util.EnumSet;
+import java.util.Set;
+
+
 public enum ApplicationStatus {
     TO_APPLY,
     APPLIED,
@@ -16,5 +20,8 @@ public enum ApplicationStatus {
     OFFER,
     REJECTED,
     WITHDRAWN,
-    EXPIRED
+    EXPIRED;
+
+    public static final Set<ApplicationStatus> FINISHED = EnumSet.of(REJECTED, WITHDRAWN, EXPIRED);
+
 }
