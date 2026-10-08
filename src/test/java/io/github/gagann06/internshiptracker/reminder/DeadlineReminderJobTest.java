@@ -120,6 +120,25 @@ class DeadlineReminderJobTest {
                 .containsExactly("due 4 July (three days ahead in London)");
     }
 
+    @Test
+    void oneUsersFailedReminderDoesNotStopTheOthers() {
+        Company goldman = companyRepository.save(new Company(alice.getId(), "Goldman Sachs"));
+        Company citadel = companyRepository.save(new Company(bob.getId(), "Citadel"));
+        save(goldman, "Summer Analyst", TODAY);
+        save(citadel, "Quant Intern", TODAY);
+        ReminderNotifier failsForAlice = reminder -> {
+            if (reminder.email().equals("alice@example.com")) {
+                throw new IllegalStateException("simulated mail server failure");
+            }
+            notifier.send(reminder);
+        };
+
+        new DeadlineReminderJob(applicationRepository, userRepository, failsForAlice, NOV_10_LONDON)
+                .sendDeadlineReminders();
+
+        assertThat(notifier.sent).extracting(DeadlineReminder::email).containsExactly("bob@example.com");
+    }
+
     private DeadlineReminderJob job(Clock clock) {
         return new DeadlineReminderJob(applicationRepository, userRepository, notifier, clock);
     }

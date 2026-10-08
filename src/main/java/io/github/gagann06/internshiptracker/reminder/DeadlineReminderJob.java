@@ -7,6 +7,9 @@ import java.util.stream.Collectors;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.github.gagann06.internshiptracker.application.Application;
 import io.github.gagann06.internshiptracker.application.ApplicationRepository;
 import io.github.gagann06.internshiptracker.application.ApplicationStatus;
@@ -25,6 +28,9 @@ public class DeadlineReminderJob {
     private final ReminderNotifier reminderNotifier;
     private final Clock clock;
 
+    private static final Logger log = LoggerFactory.getLogger(DeadlineReminderJob.class);
+
+
     public DeadlineReminderJob(ApplicationRepository applicationRepository, UserRepository userRepository, ReminderNotifier reminderNotifier, Clock clock) {
         this.applicationRepository = applicationRepository;
         this.userRepository = userRepository;
@@ -32,7 +38,7 @@ public class DeadlineReminderJob {
         this.clock = clock;
     }
 
-    @Scheduled(cron = "0 0 8 * * *", zone = "Europe/London")
+    @Scheduled(cron = "${app.reminders.cron}", zone = "Europe/London")
     @Transactional(readOnly = true)
     public void sendDeadlineReminders() {
         LocalDate today = LocalDate.now(clock);
@@ -50,7 +56,11 @@ public class DeadlineReminderJob {
             List<ReminderItem> items = applications.stream()
                     .map(a -> new ReminderItem(a.getCompany().getName(), a.getRoleTitle(), a.getStatus(), a.getDeadline()))
                     .toList();
-            reminderNotifier.send(new DeadlineReminder(emailById.get(ownerId), items));
+            try {
+                reminderNotifier.send(new DeadlineReminder(emailById.get(ownerId), items));
+            } catch (RuntimeException e) {
+                log.error("Failed to send deadline reminder to user {}", ownerId, e);
+            }
         });
     }
 }
