@@ -28,7 +28,7 @@ public class CompanyController {
     }
 
     @PostMapping()
-    public ResponseEntity<CompanyResponse> create(@Valid @RequestBody CompanyRequest request ) {
+    public ResponseEntity<CompanyResponse> create(@Valid @RequestBody CompanyRequest request) {
         Company company = companyService.create(request.name(), request.industry());
         return ResponseEntity.created(URI.create("/api/companies/" + company.getId())).body(CompanyResponse.from(company));
     }

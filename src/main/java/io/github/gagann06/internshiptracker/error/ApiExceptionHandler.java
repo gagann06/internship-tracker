@@ -3,6 +3,7 @@ package io.github.gagann06.internshiptracker.error;
 import io.github.gagann06.internshiptracker.application.ApplicationNotFoundException;
 import io.github.gagann06.internshiptracker.application.StatusUnchangedException;
 import io.github.gagann06.internshiptracker.application.UnknownCompanyException;
+import io.github.gagann06.internshiptracker.auth.DuplicateEmailException;
 import io.github.gagann06.internshiptracker.company.CompanyHasApplicationsException;
 import io.github.gagann06.internshiptracker.company.CompanyNotFoundException;
 import io.github.gagann06.internshiptracker.company.DuplicateCompanyNameException;
@@ -48,6 +49,11 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(StatusUnchangedException.class)
     public ProblemDetail applicationStatusUnchanged(StatusUnchangedException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(DuplicateEmailException.class)
+    public ProblemDetail duplicateEmail(DuplicateEmailException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
     }
 }
