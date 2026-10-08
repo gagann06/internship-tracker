@@ -1,4 +1,4 @@
-package io.github.gagann06.internshiptracker.common;
+package io.github.gagann06.internshiptracker.error;
 
 import io.github.gagann06.internshiptracker.application.ApplicationNotFoundException;
 import io.github.gagann06.internshiptracker.application.StatusUnchangedException;
