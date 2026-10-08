@@ -20,6 +20,8 @@ Testcontainers, Docker.
 - **Deadline reminders**: a scheduled job emails each user a daily digest of deadlines
   due in the next three days.
 - **Stats**: a stage funnel, the average time between statuses, and applications per company.
+- **Web interface**: a single page served by the app at `/`, built with plain HTML, CSS and
+  JavaScript, for using the tracker day to day.
 
 ## Running it
 
@@ -43,8 +45,8 @@ Then start Postgres, Mailpit and the app:
 docker compose --profile app up --build
 ```
 
-The API is on `http://localhost:8080`, and every email the app sends is caught by Mailpit at
-`http://localhost:8025`. Nothing reaches a real inbox.
+Open `http://localhost:8080` to use the tracker. Every email the app sends is caught by
+Mailpit at `http://localhost:8025`, so nothing reaches a real inbox.
 
 ### For development
 
@@ -218,6 +220,17 @@ logged without stopping the others.
   to find the time since each application's previous change. JPQL cannot express window
   functions, so this is the one place the code is tied to PostgreSQL. Native queries are not
   checked at startup the way JPQL is, which is why this one has its own tests.
+
+### Web interface
+
+The interface is a static page in `src/main/resources/static`, served by the same
+application, so there is one deployment and no cross-origin configuration. It uses no
+framework and talks to the API exactly as any other client would. It was generated with AI
+assistance; the API behind it is the substance of the project.
+
+The access token is kept in `sessionStorage` rather than `localStorage`, so it is discarded
+when the tab closes, limiting how long a leaked token stays useful. All user-entered text is
+inserted as text, never as HTML, so it cannot be run as script.
 
 ### Docker
 

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Internship Tracker</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar" id="topbar" hidden>
+    <span class="brand">Internship Tracker</span>
+    <nav>
+      <button class="tab" data-view="applications">Applications</button>
+      <button class="tab" data-view="stats">Stats</button>
+    </nav>
+    <span class="spacer"></span>
+    <span id="user-email" class="muted"></span>
+    <button id="logout" class="link">Log out</button>
+  </header>
+
+  <main>
+    <div id="notice" class="notice" hidden></div>
+
+    <section id="auth-view" class="auth" hidden>
+      <h1>Internship Tracker</h1>
+      <p class="muted">Keep track of every application, from first click to offer.</p>
+      <form id="auth-form">
+        <label>Email
+          <input type="email" name="email" required autocomplete="username">
+        </label>
+        <label>Password
+          <input type="password" name="password" required minlength="8" autocomplete="current-password">
+        </label>
+        <div class="row">
+          <button type="submit" data-mode="login" class="primary">Log in</button>
+          <button type="submit" data-mode="register">Create account</button>
+        </div>
+      </form>
+    </section>
+
+    <section id="applications-view" hidden>
+      <div class="toolbar">
+        <input id="search" type="search" placeholder="Search company or role" aria-label="Search">
+        <select id="status-filter" aria-label="Filter by status">
+          <option value="">All statuses</option>
+        </select>
+        <span class="spacer"></span>
+        <button id="add-application" class="primary">Add application</button>
+      </div>
+      <div class="table-wrap">
+        <table class="grid">
+          <thead>
+            <tr>
+              <th>Company</th>
+              <th>Role</th>
+              <th>Stream</th>
+              <th>Status</th>
+              <th>Applied</th>
+              <th>Deadline</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="applications-body"></tbody>
+        </table>
+      </div>
+      <p id="applications-empty" class="empty" hidden></p>
+    </section>
+
+    <section id="stats-view" hidden>
+      <h2>Funnel</h2>
+      <p class="muted small">How many applications reached each stage, as a share of those you applied to.</p>
+      <div class="table-wrap"><table class="grid" id="funnel"></table></div>
+
+      <h2>Time between statuses</h2>
+      <div class="table-wrap"><table class="grid" id="transitions"></table></div>
+
+      <h2>Applications per company</h2>
+      <div class="table-wrap"><table class="grid" id="per-company"></table></div>
+    </section>
+  </main>
+
+  <dialog id="application-dialog">
+    <form id="application-form">
+      <h2 id="application-dialog-title">Add application</h2>
+      <label>Company
+        <input name="company" list="company-names" required autocomplete="off">
+      </label>
+      <datalist id="company-names"></datalist>
+      <label>Role
+        <input name="roleTitle" required>
+      </label>
+      <label>Stream
+        <input name="businessStream" placeholder="e.g. Technology">
+      </label>
+      <div class="row">
+        <label>Applied
+          <input type="date" name="appliedDate">
+        </label>
+        <label>Deadline
+          <input type="date" name="deadline">
+        </label>
+      </div>
+      <label id="initial-status-label">Status
+        <select name="status"></select>
+      </label>
+      <p class="muted small">The deadline is whatever is due next: the closing date, then an assessment, and so on.</p>
+      <p id="application-form-error" class="form-error" hidden></p>
+      <div class="row end">
+        <button type="button" data-close>Cancel</button>
+        <button type="submit" class="primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="history-dialog">
+    <h2 id="history-title">History</h2>
+    <ol id="history-list" class="history"></ol>
+    <div class="row end">
+      <button type="button" data-close>Close</button>
+    </div>
+  </dialog>
+</body>
+</html>
