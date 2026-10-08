@@ -4,6 +4,7 @@ import io.github.gagann06.internshiptracker.application.ApplicationRepository;
 import io.github.gagann06.internshiptracker.TestcontainersConfiguration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -39,7 +40,7 @@ public class CompanyControllerIntegrationTest {
 
     @Test 
     void createReturns201WithTheCompany() {
-        assertThat(mvc.post().uri("/api/companies")
+        assertThat(mvc.post().with(jwt()).uri("/api/companies")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"name": "Goldman Sachs", "industry": "Investment Banking"}
@@ -53,7 +54,7 @@ public class CompanyControllerIntegrationTest {
         companyRepository.save(new Company("Goldman Sachs", "Investment Banking"));
         companyRepository.save(new Company("Jane Street"));
 
-        assertThat(mvc.get().uri("/api/companies"))
+        assertThat(mvc.get().with(jwt()).uri("/api/companies"))
                 .hasStatusOk()
                 .bodyJson().extractingPath("$[*].name").asArray()
                 .containsExactlyInAnyOrder("Goldman Sachs", "Jane Street");
@@ -61,14 +62,14 @@ public class CompanyControllerIntegrationTest {
 
     @Test
     void getMissingCompanyReturns404ProblemDetail() {
-        assertThat(mvc.get().uri("/api/companies/{id}", 999))
+        assertThat(mvc.get().with(jwt()).uri("/api/companies/{id}", 999))
                 .hasStatus(HttpStatus.NOT_FOUND)
                 .bodyJson().extractingPath("$.detail").isEqualTo("Company 999 not found");
     }
 
     @Test
     void createWithBlankNameReturns400() {
-        assertThat(mvc.post().uri("/api/companies")
+        assertThat(mvc.post().with(jwt()).uri("/api/companies")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"name": "   "}
@@ -80,7 +81,7 @@ public class CompanyControllerIntegrationTest {
     void createDuplicateInDifferentCaseReturns409() {
         companyRepository.save(new Company("Goldman Sachs"));
 
-        assertThat(mvc.post().uri("/api/companies")
+        assertThat(mvc.post().with(jwt()).uri("/api/companies")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"name": "goldman sachs "}
@@ -93,7 +94,7 @@ public class CompanyControllerIntegrationTest {
     void updateCanChangeTheCaseOfItsOwnName() {
         Company saved = companyRepository.save(new Company("Goldman Sachs"));
 
-        assertThat(mvc.put().uri("/api/companies/{id}", saved.getId())
+        assertThat(mvc.put().with(jwt()).uri("/api/companies/{id}", saved.getId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"name": "Goldman sachs"}
@@ -107,7 +108,7 @@ public class CompanyControllerIntegrationTest {
         companyRepository.save(new Company("Goldman Sachs"));
         Company other = companyRepository.save(new Company("Jane Street"));
 
-        assertThat(mvc.put().uri("/api/companies/{id}", other.getId())
+        assertThat(mvc.put().with(jwt()).uri("/api/companies/{id}", other.getId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"name": "GOLDMAN SACHS"}
@@ -119,9 +120,9 @@ public class CompanyControllerIntegrationTest {
     void deleteReturns204AndTheCompanyIsGone() {
         Company saved = companyRepository.save(new Company("Goldman Sachs"));
 
-        assertThat(mvc.delete().uri("/api/companies/{id}", saved.getId()))
+        assertThat(mvc.delete().with(jwt()).uri("/api/companies/{id}", saved.getId()))
                 .hasStatus(HttpStatus.NO_CONTENT);
-        assertThat(mvc.get().uri("/api/companies/{id}", saved.getId()))
+        assertThat(mvc.get().with(jwt()).uri("/api/companies/{id}", saved.getId()))
                 .hasStatus(HttpStatus.NOT_FOUND);
     }
 

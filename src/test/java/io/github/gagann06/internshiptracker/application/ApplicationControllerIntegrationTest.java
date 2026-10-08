@@ -5,6 +5,7 @@ import io.github.gagann06.internshiptracker.company.CompanyRepository;
 import io.github.gagann06.internshiptracker.TestcontainersConfiguration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 
 import java.time.LocalDate;
 
@@ -46,7 +47,7 @@ public class ApplicationControllerIntegrationTest {
     void createReturns201WithTheCompany() {
         Company company = companyRepository.save(new Company("Goldman Sachs"));
 
-        assertThat(mvc.post().uri("/api/applications")
+        assertThat(mvc.post().with(jwt()).uri("/api/applications")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"companyId": %d, "roleTitle": "SWE Intern"}
@@ -59,7 +60,7 @@ public class ApplicationControllerIntegrationTest {
     void createRecordsTheStartingStatusInTheHistory() {
         Company company = companyRepository.save(new Company("Goldman Sachs"));
 
-        assertThat(mvc.post().uri("/api/applications")
+        assertThat(mvc.post().with(jwt()).uri("/api/applications")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"companyId": %d, "roleTitle": "SWE Intern"}
@@ -78,7 +79,7 @@ public class ApplicationControllerIntegrationTest {
     void newApplicationStartsAtToApply() {
         Company company = companyRepository.save(new Company("Goldman Sachs"));
 
-        assertThat(mvc.post().uri("/api/applications")
+        assertThat(mvc.post().with(jwt()).uri("/api/applications")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"companyId": %d, "roleTitle": "SWE Intern"}
@@ -92,7 +93,7 @@ public class ApplicationControllerIntegrationTest {
         Company goldman = companyRepository.save(new Company("Goldman Sachs"));
         Application application = applicationRepository.save(new Application(goldman, "Summer Analyst"));
 
-        assertThat(mvc.post().uri("/api/applications/{id}/status", application.getId())
+        assertThat(mvc.post().with(jwt()).uri("/api/applications/{id}/status", application.getId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"status": "APPLIED", "note": "Submitted via careers site"}
@@ -117,7 +118,7 @@ public class ApplicationControllerIntegrationTest {
         Company goldman = companyRepository.save(new Company("Goldman Sachs"));
         Application application = applicationRepository.save(new Application(goldman, "Summer Analyst"));
 
-        assertThat(mvc.post().uri("/api/applications/{id}/status", application.getId())
+        assertThat(mvc.post().with(jwt()).uri("/api/applications/{id}/status", application.getId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"status": "TO_APPLY"}
@@ -136,7 +137,7 @@ public class ApplicationControllerIntegrationTest {
         Company goldman = companyRepository.save(new Company("Goldman Sachs"));
         Application application = applicationRepository.save(new Application(goldman, "Summer Analyst"));
 
-        assertThat(mvc.post().uri("/api/applications/{id}/status", application.getId())
+        assertThat(mvc.post().with(jwt()).uri("/api/applications/{id}/status", application.getId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"status": "INTERVIEWING"}
@@ -149,7 +150,7 @@ public class ApplicationControllerIntegrationTest {
         Company goldman = companyRepository.save(new Company("Goldman Sachs"));
         Application application = applicationRepository.save(new Application(goldman, "Summer Analyst"));
 
-        assertThat(mvc.post().uri("/api/applications/{id}/status", application.getId())
+        assertThat(mvc.post().with(jwt()).uri("/api/applications/{id}/status", application.getId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"note": "forgot the status"}
@@ -159,7 +160,7 @@ public class ApplicationControllerIntegrationTest {
 
     @Test
     void changeStatusOfMissingApplicationReturns404() {
-        assertThat(mvc.post().uri("/api/applications/{id}/status", 999)
+        assertThat(mvc.post().with(jwt()).uri("/api/applications/{id}/status", 999)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"status": "APPLIED"}
@@ -174,7 +175,7 @@ public class ApplicationControllerIntegrationTest {
         changeStatus(application.getId(), "APPLIED", "Submitted");
         changeStatus(application.getId(), "ONLINE_ASSESSMENT", null);
 
-        assertThat(mvc.get().uri("/api/applications/{id}/status-changes", application.getId()))
+        assertThat(mvc.get().with(jwt()).uri("/api/applications/{id}/status-changes", application.getId()))
                 .hasStatusOk()
                 .bodyJson()
                 .satisfies(json -> {
@@ -189,7 +190,7 @@ public class ApplicationControllerIntegrationTest {
 
     @Test
     void historyOfMissingApplicationReturns404NotAnEmptyList() {
-        assertThat(mvc.get().uri("/api/applications/{id}/status-changes", 999))
+        assertThat(mvc.get().with(jwt()).uri("/api/applications/{id}/status-changes", 999))
                 .hasStatus(HttpStatus.NOT_FOUND);
     }
 
@@ -199,7 +200,7 @@ public class ApplicationControllerIntegrationTest {
         Application application = applicationRepository.save(new Application(goldman, "Summer Analyst"));
         changeStatus(application.getId(), "APPLIED", null);
 
-        assertThat(mvc.delete().uri("/api/applications/{id}", application.getId()))
+        assertThat(mvc.delete().with(jwt()).uri("/api/applications/{id}", application.getId()))
                 .hasStatus(HttpStatus.NO_CONTENT);
 
         Long remaining = jdbcTemplate.queryForObject(
@@ -210,7 +211,7 @@ public class ApplicationControllerIntegrationTest {
 
     private void changeStatus(Long applicationId, String status, String note) {
         String noteJson = note == null ? "null" : "\"" + note + "\"";
-        assertThat(mvc.post().uri("/api/applications/{id}/status", applicationId)
+        assertThat(mvc.post().with(jwt()).uri("/api/applications/{id}/status", applicationId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"status": "%s", "note": %s}
@@ -222,7 +223,7 @@ public class ApplicationControllerIntegrationTest {
     void createTrimsRoleTitleAndStoresOptionalFields() {
         Company company = companyRepository.save(new Company("Goldman Sachs"));
 
-        assertThat(mvc.post().uri("/api/applications")
+        assertThat(mvc.post().with(jwt()).uri("/api/applications")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"companyId": %d, "roleTitle": "  Summer Analyst  ", "businessStream": "Technology",
@@ -240,7 +241,7 @@ public class ApplicationControllerIntegrationTest {
 
     @Test
     void createWithUnknownCompanyReturns400AndSavesNothing() {
-        assertThat(mvc.post().uri("/api/applications")
+        assertThat(mvc.post().with(jwt()).uri("/api/applications")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"companyId": 999, "roleTitle": "SWE Intern"}
@@ -255,7 +256,7 @@ public class ApplicationControllerIntegrationTest {
     void createWithoutRoleTitleReturns400() {
         Company company = companyRepository.save(new Company("Goldman Sachs"));
 
-        assertThat(mvc.post().uri("/api/applications")
+        assertThat(mvc.post().with(jwt()).uri("/api/applications")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"companyId": %d}
@@ -270,7 +271,7 @@ public class ApplicationControllerIntegrationTest {
         applicationRepository.save(new Application(goldman, "Summer Analyst"));
         applicationRepository.save(new Application(janeStreet, "SWE Intern"));
 
-        assertThat(mvc.get().uri("/api/applications"))
+        assertThat(mvc.get().with(jwt()).uri("/api/applications"))
                 .hasStatusOk()
                 .bodyJson().extractingPath("$[*].companyName").asArray()
                 .containsExactlyInAnyOrder("Goldman Sachs", "Jane Street");
@@ -281,14 +282,14 @@ public class ApplicationControllerIntegrationTest {
         Company goldman = companyRepository.save(new Company("Goldman Sachs"));
         Application application = applicationRepository.save(new Application(goldman, "Summer Analyst"));
 
-        assertThat(mvc.get().uri("/api/applications/{id}", application.getId()))
+        assertThat(mvc.get().with(jwt()).uri("/api/applications/{id}", application.getId()))
                 .hasStatusOk()
                 .bodyJson().extractingPath("$.companyName").isEqualTo("Goldman Sachs");
     }
 
     @Test
     void getMissingApplicationReturns404() {
-        assertThat(mvc.get().uri("/api/applications/{id}", 999))
+        assertThat(mvc.get().with(jwt()).uri("/api/applications/{id}", 999))
                 .hasStatus(HttpStatus.NOT_FOUND)
                 .bodyJson().extractingPath("$.detail").isEqualTo("Application 999 not found");
     }
@@ -301,7 +302,7 @@ public class ApplicationControllerIntegrationTest {
         application.setDeadline(LocalDate.of(2026, 11, 15));
         application = applicationRepository.save(application);
 
-        assertThat(mvc.put().uri("/api/applications/{id}", application.getId())
+        assertThat(mvc.put().with(jwt()).uri("/api/applications/{id}", application.getId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"companyId": %d, "roleTitle": "SWE Intern"}
@@ -320,14 +321,14 @@ public class ApplicationControllerIntegrationTest {
         Company goldman = companyRepository.save(new Company("Goldman Sachs"));
         Application application = applicationRepository.save(new Application(goldman, "Summer Analyst"));
 
-        assertThat(mvc.put().uri("/api/applications/{id}", application.getId())
+        assertThat(mvc.put().with(jwt()).uri("/api/applications/{id}", application.getId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"companyId": 999, "roleTitle": "Changed"}
                         """))
                 .hasStatus(HttpStatus.BAD_REQUEST);
 
-        assertThat(mvc.get().uri("/api/applications/{id}", application.getId()))
+        assertThat(mvc.get().with(jwt()).uri("/api/applications/{id}", application.getId()))
                 .hasStatusOk()
                 .bodyJson()
                 .satisfies(json -> {
@@ -341,9 +342,9 @@ public class ApplicationControllerIntegrationTest {
         Company goldman = companyRepository.save(new Company("Goldman Sachs"));
         Application application = applicationRepository.save(new Application(goldman, "Summer Analyst"));
 
-        assertThat(mvc.delete().uri("/api/applications/{id}", application.getId()))
+        assertThat(mvc.delete().with(jwt()).uri("/api/applications/{id}", application.getId()))
                 .hasStatus(HttpStatus.NO_CONTENT);
-        assertThat(mvc.get().uri("/api/applications/{id}", application.getId()))
+        assertThat(mvc.get().with(jwt()).uri("/api/applications/{id}", application.getId()))
                 .hasStatus(HttpStatus.NOT_FOUND);
     }
 
@@ -352,7 +353,7 @@ public class ApplicationControllerIntegrationTest {
         Company goldman = companyRepository.save(new Company("Goldman Sachs"));
         applicationRepository.save(new Application(goldman, "Summer Analyst"));
 
-        assertThat(mvc.delete().uri("/api/companies/{id}", goldman.getId()))
+        assertThat(mvc.delete().with(jwt()).uri("/api/companies/{id}", goldman.getId()))
                 .hasStatus(HttpStatus.CONFLICT)
                 .bodyJson().extractingPath("$.detail")
                 .isEqualTo("Company " + goldman.getId() + " still has applications that need to be deleted first");
