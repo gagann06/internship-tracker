@@ -108,6 +108,9 @@ curl localhost:8080/api/applications -H "Authorization: Bearer <token>"
 Everything except `/api/auth/**` needs a token. Errors use the standard `ProblemDetail`
 JSON format throughout.
 
+Interactive documentation is generated from the code at `/swagger-ui.html`. Register and log
+in there, paste the token into **Authorize**, and every endpoint can be tried from the browser.
+
 ## Design decisions
 
 ### Status history rather than a status column
