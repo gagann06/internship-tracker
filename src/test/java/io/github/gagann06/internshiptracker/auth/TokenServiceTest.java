@@ -12,6 +12,7 @@ import java.util.Base64;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
+import io.github.gagann06.internshiptracker.TestDatabase;
 import io.github.gagann06.internshiptracker.TestcontainersConfiguration;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -36,11 +38,14 @@ class TokenServiceTest {
     UserRepository userRepository;
 
     @Autowired
+    JdbcTemplate jdbcTemplate;
+
+    @Autowired
     SecretKey jwtSigningKey;
 
     @BeforeEach
     void cleanDatabase() {
-        userRepository.deleteAll();
+        TestDatabase.clean(jdbcTemplate);
     }
 
     @Test

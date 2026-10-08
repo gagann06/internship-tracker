@@ -22,11 +22,13 @@ import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class)
 public class CompanyServiceTest {
-    
+
+    private static final Long USER = 1000L;
+
     @Mock
     CompanyRepository companyRepository;
 
-    @Mock 
+    @Mock
     ApplicationRepository applicationRepository;
 
     CompanyService companyService;
@@ -36,64 +38,65 @@ public class CompanyServiceTest {
         companyService = new CompanyService(companyRepository, applicationRepository);
     }
 
-    @Test 
+    @Test
     void createThrowsExceptionWhenCompanyExists() {
 
-        when(companyRepository.existsByNameIgnoreCase("Goldman Sachs")).thenReturn(true);
-        assertThatThrownBy(() -> companyService.create("Goldman Sachs", "Investment Banking")).isInstanceOf(DuplicateCompanyNameException.class);
+        when(companyRepository.existsByOwnerIdAndNameIgnoreCase(USER, "Goldman Sachs")).thenReturn(true);
+        assertThatThrownBy(() -> companyService.create(USER, "Goldman Sachs", "Investment Banking")).isInstanceOf(DuplicateCompanyNameException.class);
         verify(companyRepository, never()).save(any());
     }
 
     @Test
-    void createTrimsNameBeforeCheckingAndSaving() {
+    void createTrimsNameAndRecordsTheOwner() {
         when(companyRepository.save(any(Company.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Company created = companyService.create("  Goldman Sachs  ", "Investment Banking");
+        Company created = companyService.create(USER, "  Goldman Sachs  ", "Investment Banking");
 
         assertThat(created.getName()).isEqualTo("Goldman Sachs");
-        verify(companyRepository).existsByNameIgnoreCase("Goldman Sachs");
+        assertThat(created.getOwnerId()).isEqualTo(USER);
+        verify(companyRepository).existsByOwnerIdAndNameIgnoreCase(USER, "Goldman Sachs");
     }
 
     @Test
-    void getCompanyThrowsWhenIdDoesNotExist() {
-        when(companyRepository.findById(99L)).thenReturn(Optional.empty());
+    void getCompanyThrowsWhenNotFoundForThisUser() {
+        when(companyRepository.findByIdAndOwnerId(99L, USER)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> companyService.getCompany(99L)).isInstanceOf(CompanyNotFoundException.class);
+        assertThatThrownBy(() -> companyService.getCompany(USER, 99L)).isInstanceOf(CompanyNotFoundException.class);
     }
 
     @Test
     void updateThrowsWhenAnotherCompanyHasTheName() {
-        Company existing = new Company("Goldman Sachs", "Investment Banking");
-        when(companyRepository.findById(1L)).thenReturn(Optional.of(existing));
-        when(companyRepository.existsByNameIgnoreCaseAndIdNot("Morgan Stanley", 1L)).thenReturn(true);
+        Company existing = new Company(USER, "Goldman Sachs", "Investment Banking");
+        when(companyRepository.findByIdAndOwnerId(1L, USER)).thenReturn(Optional.of(existing));
+        when(companyRepository.existsByOwnerIdAndNameIgnoreCaseAndIdNot(USER, "Morgan Stanley", 1L)).thenReturn(true);
 
-        assertThatThrownBy(() -> companyService.update(1L, "Morgan Stanley", "Investment Banking")).isInstanceOf(DuplicateCompanyNameException.class);
+        assertThatThrownBy(() -> companyService.update(USER, 1L, "Morgan Stanley", "Investment Banking")).isInstanceOf(DuplicateCompanyNameException.class);
         assertThat(existing.getName()).isEqualTo("Goldman Sachs");
     }
 
     @Test
-    void deleteThrowsWhenIdDoesNotExistAndDeletesNothing() {
-        when(companyRepository.existsById(99L)).thenReturn(false);
+    void deleteThrowsWhenNotFoundForThisUserAndDeletesNothing() {
+        when(companyRepository.existsByIdAndOwnerId(99L, USER)).thenReturn(false);
 
-        assertThatThrownBy(() -> companyService.delete(99L)).isInstanceOf(CompanyNotFoundException.class);
+        assertThatThrownBy(() -> companyService.delete(USER, 99L)).isInstanceOf(CompanyNotFoundException.class);
         verify(companyRepository, never()).deleteById(any());
     }
 
     @Test
     void deleteThrowsWhenCompanyStillHasApplicationsAndDeletesNothing() {
-        when(companyRepository.existsById(1L)).thenReturn(true);
+        when(companyRepository.existsByIdAndOwnerId(1L, USER)).thenReturn(true);
         when(applicationRepository.existsByCompanyId(1L)).thenReturn(true);
 
-        assertThatThrownBy(() -> companyService.delete(1L)).isInstanceOf(CompanyHasApplicationsException.class);
+        assertThatThrownBy(() -> companyService.delete(USER, 1L)).isInstanceOf(CompanyHasApplicationsException.class);
         verify(companyRepository, never()).deleteById(any());
     }
 
     @Test
     void deleteRemovesCompanyWithNoApplications() {
-        when(companyRepository.existsById(1L)).thenReturn(true);
+        when(companyRepository.existsByIdAndOwnerId(1L, USER)).thenReturn(true);
         when(applicationRepository.existsByCompanyId(1L)).thenReturn(false);
 
-        companyService.delete(1L);
+        companyService.delete(USER, 1L);
 
         verify(companyRepository).deleteById(1L);
     }

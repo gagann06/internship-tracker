@@ -3,6 +3,7 @@ package io.github.gagann06.internshiptracker.application;
 import io.github.gagann06.internshiptracker.company.Company;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -42,6 +43,9 @@ public class Application {
     private LocalDate deadline;
     private Instant createdAt;
 
+    @Column(name = "user_id", nullable = false)
+    private Long ownerId;
+
     @OneToMany(mappedBy = "application", cascade = CascadeType.PERSIST)
     private List<StatusChange> statusChanges = new ArrayList<>();
 
@@ -53,6 +57,7 @@ public class Application {
         this.createdAt = Instant.now();
         this.status = ApplicationStatus.TO_APPLY;
         statusChanges.add(new StatusChange(this, null, ApplicationStatus.TO_APPLY, null));
+        this.ownerId = company.getOwnerId();
     }
 
     public void changeStatus(ApplicationStatus newStatus, String note) {
@@ -72,6 +77,9 @@ public class Application {
     }
 
     public void setCompany(Company company) {
+        if (!company.getOwnerId().equals(this.ownerId)) {
+            throw new IllegalArgumentException("Cannot move an application to another user's company");
+        }
         this.company = company;
     }
 
@@ -117,5 +125,9 @@ public class Application {
 
     public List<StatusChange> getStatusChanges() {
         return Collections.unmodifiableList(statusChanges);
+    }
+
+    public Long getOwnerId() {
+        return ownerId;
     }
 }

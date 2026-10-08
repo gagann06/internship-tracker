@@ -19,34 +19,34 @@ public class CompanyService {
     }
 
     @Transactional 
-    public Company create(String name, String industry) {
+    public Company create(Long userId, String name, String industry) {
         String trimmedName = name.strip();
 
-        if (companyRepository.existsByNameIgnoreCase(trimmedName)) {
+        if (companyRepository.existsByOwnerIdAndNameIgnoreCase(userId, trimmedName)) {
             throw new DuplicateCompanyNameException(trimmedName);
         }
 
-        Company company = new Company(trimmedName, industry);
+        Company company = new Company(userId, trimmedName, industry);
 
         return companyRepository.save(company);
     }
 
     @Transactional(readOnly = true)
-    public List<Company> listAll() {
-        return companyRepository.findAll();
+    public List<Company> listAll(Long userId) {
+        return companyRepository.findAllByOwnerId(userId);
     }
 
     @Transactional(readOnly = true)
-    public Company getCompany(Long id) {
-        return companyRepository.findById(id).orElseThrow(() -> new CompanyNotFoundException(id));
+    public Company getCompany(Long userId, Long id) {
+        return companyRepository.findByIdAndOwnerId(id, userId).orElseThrow(() -> new CompanyNotFoundException(id));
     }
 
     @Transactional
-    public Company update(Long id, String name, String industry) {
-        Company company = getCompany(id);
+    public Company update(Long userId, Long id, String name, String industry) {
+        Company company = getCompany(userId, id);
         String trimmedName = name.strip();
 
-        if (companyRepository.existsByNameIgnoreCaseAndIdNot(trimmedName, id)) {
+        if (companyRepository.existsByOwnerIdAndNameIgnoreCaseAndIdNot(userId, trimmedName, id)) {
             throw new DuplicateCompanyNameException(trimmedName);
         }
 
@@ -57,8 +57,8 @@ public class CompanyService {
     }
 
     @Transactional
-    public void delete(Long id) {
-        if (!companyRepository.existsById(id)) {
+    public void delete(Long userId, Long id) {
+        if (!companyRepository.existsByIdAndOwnerId(id, userId)) {
             throw new CompanyNotFoundException(id);
         }
 

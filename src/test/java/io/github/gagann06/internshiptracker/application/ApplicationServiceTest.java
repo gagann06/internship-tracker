@@ -22,6 +22,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class ApplicationServiceTest {
 
+    private static final Long USER = 1000L;
+
     @Mock
     ApplicationRepository applicationRepository;
 
@@ -39,19 +41,19 @@ class ApplicationServiceTest {
     }
 
     @Test
-    void createThrowsWhenCompanyDoesNotExistAndSavesNothing() {
-        when(companyRepository.findById(999L)).thenReturn(Optional.empty());
+    void createThrowsWhenCompanyIsNotTheUsersAndSavesNothing() {
+        when(companyRepository.findByIdAndOwnerId(999L, USER)).thenReturn(Optional.empty());
         ApplicationRequest request = new ApplicationRequest(999L, "SWE Intern", null, null, null);
 
-        assertThatThrownBy(() -> applicationService.create(request))
+        assertThatThrownBy(() -> applicationService.create(USER, request))
                 .isInstanceOf(UnknownCompanyException.class);
         verify(applicationRepository, never()).save(any());
     }
 
     @Test
-    void createStripsRoleTitleAndCopiesOptionalFields() {
-        Company goldman = new Company("Goldman Sachs");
-        when(companyRepository.findById(1L)).thenReturn(Optional.of(goldman));
+    void createStripsRoleTitleCopiesOptionalFieldsAndInheritsTheOwner() {
+        Company goldman = new Company(USER, "Goldman Sachs");
+        when(companyRepository.findByIdAndOwnerId(1L, USER)).thenReturn(Optional.of(goldman));
         when(applicationRepository.save(any(Application.class))).thenAnswer(invocation -> invocation.getArgument(0));
         ApplicationRequest request = new ApplicationRequest(
                 1L,
@@ -60,9 +62,10 @@ class ApplicationServiceTest {
                 LocalDate.of(2026, 10, 1),
                 LocalDate.of(2026, 11, 15));
 
-        Application created = applicationService.create(request);
+        Application created = applicationService.create(USER, request);
 
         assertThat(created.getCompany()).isSameAs(goldman);
+        assertThat(created.getOwnerId()).isEqualTo(USER);
         assertThat(created.getRoleTitle()).isEqualTo("Summer Analyst");
         assertThat(created.getBusinessStream()).isEqualTo("Technology");
         assertThat(created.getAppliedDate()).isEqualTo(LocalDate.of(2026, 10, 1));
@@ -70,22 +73,22 @@ class ApplicationServiceTest {
     }
 
     @Test
-    void getApplicationThrowsWhenIdDoesNotExist() {
-        when(applicationRepository.findByIdWithCompany(99L)).thenReturn(Optional.empty());
+    void getApplicationThrowsWhenNotFoundForThisUser() {
+        when(applicationRepository.findByIdWithCompany(99L, USER)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> applicationService.getApplication(99L))
+        assertThatThrownBy(() -> applicationService.getApplication(USER, 99L))
                 .isInstanceOf(ApplicationNotFoundException.class);
     }
 
     @Test
-    void updateThrowsWhenCompanyDoesNotExistAndLeavesApplicationUnchanged() {
-        Company goldman = new Company("Goldman Sachs");
+    void updateThrowsWhenCompanyIsNotTheUsersAndLeavesApplicationUnchanged() {
+        Company goldman = new Company(USER, "Goldman Sachs");
         Application existing = new Application(goldman, "Summer Analyst");
-        when(applicationRepository.findByIdWithCompany(1L)).thenReturn(Optional.of(existing));
-        when(companyRepository.findById(999L)).thenReturn(Optional.empty());
+        when(applicationRepository.findByIdWithCompany(1L, USER)).thenReturn(Optional.of(existing));
+        when(companyRepository.findByIdAndOwnerId(999L, USER)).thenReturn(Optional.empty());
         ApplicationRequest request = new ApplicationRequest(999L, "Changed", null, null, null);
 
-        assertThatThrownBy(() -> applicationService.update(1L, request))
+        assertThatThrownBy(() -> applicationService.update(USER, 1L, request))
                 .isInstanceOf(UnknownCompanyException.class);
         assertThat(existing.getCompany()).isSameAs(goldman);
         assertThat(existing.getRoleTitle()).isEqualTo("Summer Analyst");
@@ -93,16 +96,16 @@ class ApplicationServiceTest {
 
     @Test
     void updateReplacesEveryFieldIncludingClearingOmittedOnes() {
-        Company goldman = new Company("Goldman Sachs");
-        Company janeStreet = new Company("Jane Street");
+        Company goldman = new Company(USER, "Goldman Sachs");
+        Company janeStreet = new Company(USER, "Jane Street");
         Application existing = new Application(goldman, "Summer Analyst");
         existing.setBusinessStream("Technology");
         existing.setDeadline(LocalDate.of(2026, 11, 15));
-        when(applicationRepository.findByIdWithCompany(1L)).thenReturn(Optional.of(existing));
-        when(companyRepository.findById(2L)).thenReturn(Optional.of(janeStreet));
+        when(applicationRepository.findByIdWithCompany(1L, USER)).thenReturn(Optional.of(existing));
+        when(companyRepository.findByIdAndOwnerId(2L, USER)).thenReturn(Optional.of(janeStreet));
         ApplicationRequest request = new ApplicationRequest(2L, "  SWE Intern  ", null, null, null);
 
-        Application updated = applicationService.update(1L, request);
+        Application updated = applicationService.update(USER, 1L, request);
 
         assertThat(updated.getCompany()).isSameAs(janeStreet);
         assertThat(updated.getRoleTitle()).isEqualTo("SWE Intern");
@@ -111,19 +114,19 @@ class ApplicationServiceTest {
     }
 
     @Test
-    void getHistoryThrowsWhenApplicationDoesNotExistAndQueriesNothing() {
-        when(applicationRepository.existsById(99L)).thenReturn(false);
+    void getHistoryThrowsWhenNotFoundForThisUserAndQueriesNothing() {
+        when(applicationRepository.existsByIdAndOwnerId(99L, USER)).thenReturn(false);
 
-        assertThatThrownBy(() -> applicationService.getHistory(99L))
+        assertThatThrownBy(() -> applicationService.getHistory(USER, 99L))
                 .isInstanceOf(ApplicationNotFoundException.class);
         verify(statusChangeRepository, never()).findByApplicationIdOrderByChangedAtAscIdAsc(any());
     }
 
     @Test
-    void deleteThrowsWhenIdDoesNotExistAndDeletesNothing() {
-        when(applicationRepository.existsById(99L)).thenReturn(false);
+    void deleteThrowsWhenNotFoundForThisUserAndDeletesNothing() {
+        when(applicationRepository.existsByIdAndOwnerId(99L, USER)).thenReturn(false);
 
-        assertThatThrownBy(() -> applicationService.delete(99L))
+        assertThatThrownBy(() -> applicationService.delete(USER, 99L))
                 .isInstanceOf(ApplicationNotFoundException.class);
         verify(applicationRepository, never()).deleteById(any());
     }

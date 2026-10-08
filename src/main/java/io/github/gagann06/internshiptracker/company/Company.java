@@ -1,5 +1,6 @@
 package io.github.gagann06.internshiptracker.company;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -17,15 +18,19 @@ public class Company {
     private String industry;
     private Instant createdAt;
 
+    @Column(name = "user_id", nullable = false)
+    private Long ownerId;
+
     protected Company() {
         // Required by JPA - Hibernate instantiates empty then populates fields
     }
 
-    public Company(String name) {
-        this(name, null);
+    public Company(Long ownerId, String name) {
+        this(ownerId, name, null);
     }
 
-    public Company(String name, String industry) {
+    public Company(Long ownerId, String name, String industry) {
+        this.ownerId = ownerId;
         this.name = name;
         this.industry = industry;
         this.createdAt = Instant.now();
@@ -54,4 +59,8 @@ public class Company {
     public Instant getCreatedAt() {
         return createdAt;
     }   
+
+    public Long getOwnerId() {
+        return ownerId;
+    }
 }

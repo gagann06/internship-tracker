@@ -12,6 +12,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+
+import io.github.gagann06.internshiptracker.auth.CurrentUser;
+
 import java.net.URI;
 
 
@@ -28,34 +34,34 @@ public class CompanyController {
     }
 
     @PostMapping()
-    public ResponseEntity<CompanyResponse> create(@Valid @RequestBody CompanyRequest request) {
-        Company company = companyService.create(request.name(), request.industry());
+    public ResponseEntity<CompanyResponse> create(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody CompanyRequest request) {
+        Company company = companyService.create(CurrentUser.id(jwt), request.name(), request.industry());
         return ResponseEntity.created(URI.create("/api/companies/" + company.getId())).body(CompanyResponse.from(company));
     }
 
     @GetMapping()
-    public List<CompanyResponse> listCompanies() {
-        List<Company> companies = companyService.listAll();
+    public List<CompanyResponse> listCompanies(@AuthenticationPrincipal Jwt jwt) {
+        List<Company> companies = companyService.listAll(CurrentUser.id(jwt));
         return companies.stream().map(company -> CompanyResponse.from(company)).toList();
     }
 
     @GetMapping("/{id}")
-    public CompanyResponse getCompany(@PathVariable Long id) {
-        Company company = companyService.getCompany(id);
+    public CompanyResponse getCompany(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
+        Company company = companyService.getCompany(CurrentUser.id(jwt), id);
 
         return CompanyResponse.from(company);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        companyService.delete(id);
+    public ResponseEntity<Void> delete(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
+        companyService.delete(CurrentUser.id(jwt), id);
 
         return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/{id}")
-    public CompanyResponse update(@Valid @RequestBody CompanyRequest request, @PathVariable Long id) {
-        Company company = companyService.update(id, request.name(), request.industry());
+    public CompanyResponse update(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody CompanyRequest request, @PathVariable Long id) {
+        Company company = companyService.update(CurrentUser.id(jwt), id, request.name(), request.industry());
         return CompanyResponse.from(company);    
     }
 

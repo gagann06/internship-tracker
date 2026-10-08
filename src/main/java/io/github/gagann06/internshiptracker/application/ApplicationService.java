@@ -21,38 +21,34 @@ public class ApplicationService {
         this.statusChangeRepository = statusChangeRepository;
     }
 
-    @Transactional 
-    public Application create(ApplicationRequest request) {
-        Long companyId = request.companyId();
-        Company company = companyRepository.findById(companyId)
-            .orElseThrow(() -> new UnknownCompanyException(companyId));
-        
+    @Transactional
+    public Application create(Long userId, ApplicationRequest request) {
+        Company company = findOwnedCompany(userId, request.companyId());
+
         Application application = new Application(company, request.roleTitle().strip());
         application.setBusinessStream(request.businessStream());
         application.setAppliedDate(request.appliedDate());
         application.setDeadline(request.deadline());
-        
+
         return applicationRepository.save(application);
     }
 
     @Transactional(readOnly = true)
-    public List<Application> listAll() {
-        return applicationRepository.findAllWithCompany();
+    public List<Application> listAll(Long userId) {
+        return applicationRepository.findAllWithCompany(userId);
     }
 
     @Transactional(readOnly = true)
-    public Application getApplication(Long id) {
-        return applicationRepository.findByIdWithCompany(id)
+    public Application getApplication(Long userId, Long id) {
+        return applicationRepository.findByIdWithCompany(id, userId)
             .orElseThrow(() -> new ApplicationNotFoundException(id));
     }
 
     @Transactional
-    public Application update (Long id, ApplicationRequest request) {
-        Application application = getApplication(id);
-        Long companyId = request.companyId();
-        Company company = companyRepository.findById(companyId)
-            .orElseThrow(() -> new UnknownCompanyException(companyId));
-        
+    public Application update(Long userId, Long id, ApplicationRequest request) {
+        Application application = getApplication(userId, id);
+        Company company = findOwnedCompany(userId, request.companyId());
+
         application.setCompany(company);
         application.setRoleTitle(request.roleTitle().strip());
         application.setBusinessStream(request.businessStream());
@@ -63,26 +59,34 @@ public class ApplicationService {
     }
 
     @Transactional
-    public void delete(Long id) {
-        if (!applicationRepository.existsById(id)) {
-            throw new ApplicationNotFoundException(id);
-        }
+    public void delete(Long userId, Long id) {
+        requireOwnedApplication(userId, id);
         applicationRepository.deleteById(id);
     }
 
-    @Transactional 
-    public Application changeStatus(Long id, ApplicationStatus newStatus, String note) {
-        Application application = getApplication(id);
+    @Transactional
+    public Application changeStatus(Long userId, Long id, ApplicationStatus newStatus, String note) {
+        Application application = getApplication(userId, id);
         application.changeStatus(newStatus, note);
 
         return application;
     }
 
     @Transactional(readOnly = true)
-    public List<StatusChange> getHistory(Long id) {
-        if (!applicationRepository.existsById(id)) {
+    public List<StatusChange> getHistory(Long userId, Long id) {
+        requireOwnedApplication(userId, id);
+        return statusChangeRepository.findByApplicationIdOrderByChangedAtAscIdAsc(id);
+    }
+
+    // Another user's company is reported exactly like a missing one, so its existence isn't revealed.
+    private Company findOwnedCompany(Long userId, Long companyId) {
+        return companyRepository.findByIdAndOwnerId(companyId, userId)
+            .orElseThrow(() -> new UnknownCompanyException(companyId));
+    }
+
+    private void requireOwnedApplication(Long userId, Long id) {
+        if (!applicationRepository.existsByIdAndOwnerId(id, userId)) {
             throw new ApplicationNotFoundException(id);
         }
-        return statusChangeRepository.findByApplicationIdOrderByChangedAtAscIdAsc(id);
     }
 }

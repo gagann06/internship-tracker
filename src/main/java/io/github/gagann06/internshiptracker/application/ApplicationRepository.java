@@ -8,11 +8,13 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ApplicationRepository extends JpaRepository<Application, Long> {
-    @Query("select a from Application a join fetch a.company")
-    List<Application> findAllWithCompany();
+    @Query("select a from Application a join fetch a.company where a.ownerId = :ownerId")
+    List<Application> findAllWithCompany(@Param("ownerId") Long ownerId);
 
-    @Query("select a from Application a join fetch a.company where a.id = :id")
-    Optional<Application> findByIdWithCompany(@Param("id") Long id);
+    @Query("select a from Application a join fetch a.company where a.id = :id and a.ownerId = :ownerId")
+    Optional<Application> findByIdWithCompany(@Param("id") Long id, @Param("ownerId") Long ownerId);
+
 
     boolean existsByCompanyId(Long companyId);
+    boolean existsByIdAndOwnerId(Long id, Long ownerId);
 }

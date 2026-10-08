@@ -9,7 +9,10 @@ import org.junit.jupiter.api.Test;
 
 class ApplicationTest {
 
-    private final Company goldman = new Company("Goldman Sachs");
+    private static final Long ALICE = 1000L;
+    private static final Long BOB = 1001L;
+
+    private final Company goldman = new Company(ALICE, "Goldman Sachs");
 
     @Test
     void newApplicationStartsAtToApplyWithOneHistoryEntry() {
@@ -20,6 +23,45 @@ class ApplicationTest {
         StatusChange first = application.getStatusChanges().get(0);
         assertThat(first.getFromStatus()).isNull();
         assertThat(first.getToStatus()).isEqualTo(ApplicationStatus.TO_APPLY);
+    }
+
+    @Test
+    void applicationTakesItsOwnerFromItsCompany() {
+        Application application = new Application(goldman, "Summer Analyst");
+
+        assertThat(application.getOwnerId()).isEqualTo(ALICE);
+    }
+
+    @Test
+    void applicationCanMoveToAnotherCompanyOfTheSameOwner() {
+        Application application = new Application(goldman, "Summer Analyst");
+        Company janeStreet = new Company(ALICE, "Jane Street");
+
+        application.setCompany(janeStreet);
+
+        assertThat(application.getCompany()).isSameAs(janeStreet);
+    }
+
+    @Test
+    void applicationCannotMoveToAnotherUsersCompany() {
+        Application application = new Application(goldman, "Summer Analyst");
+        Company bobsCompany = new Company(BOB, "Citadel");
+
+        assertThatThrownBy(() -> application.setCompany(bobsCompany))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThat(application.getCompany()).isSameAs(goldman);
+    }
+
+    @Test
+    void ownershipCheckComparesValuesNotObjectIdentity() {
+        // Long values above 127 are not cached, so two equal ids are distinct objects.
+        // An == comparison would wrongly reject this move; equals() accepts it.
+        Application application = new Application(new Company(Long.valueOf(5000), "Goldman Sachs"), "Summer Analyst");
+        Company sameOwnerDifferentLongObject = new Company(Long.valueOf(5000), "Jane Street");
+
+        application.setCompany(sameOwnerDifferentLongObject);
+
+        assertThat(application.getCompany()).isSameAs(sameOwnerDifferentLongObject);
     }
 
     @Test
