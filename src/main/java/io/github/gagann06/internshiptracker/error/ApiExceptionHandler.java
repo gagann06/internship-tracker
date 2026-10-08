@@ -4,6 +4,7 @@ import io.github.gagann06.internshiptracker.application.ApplicationNotFoundExcep
 import io.github.gagann06.internshiptracker.application.StatusUnchangedException;
 import io.github.gagann06.internshiptracker.application.UnknownCompanyException;
 import io.github.gagann06.internshiptracker.auth.DuplicateEmailException;
+import io.github.gagann06.internshiptracker.auth.InvalidCredentialsException;
 import io.github.gagann06.internshiptracker.company.CompanyHasApplicationsException;
 import io.github.gagann06.internshiptracker.company.CompanyNotFoundException;
 import io.github.gagann06.internshiptracker.company.DuplicateCompanyNameException;
@@ -55,5 +56,10 @@ public class ApiExceptionHandler {
     @ExceptionHandler(DuplicateEmailException.class)
     public ProblemDetail duplicateEmail(DuplicateEmailException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ProblemDetail invalidCredentials(InvalidCredentialsException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
     }
 }
