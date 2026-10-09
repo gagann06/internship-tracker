@@ -7,7 +7,7 @@ import io.github.gagann06.internshiptracker.application.UnknownCompanyException;
 import io.github.gagann06.internshiptracker.auth.DuplicateEmailException;
 import io.github.gagann06.internshiptracker.auth.EmailNotVerifiedException;
 import io.github.gagann06.internshiptracker.auth.InvalidCredentialsException;
-import io.github.gagann06.internshiptracker.auth.InvalidVerificationTokenException;
+import io.github.gagann06.internshiptracker.auth.InvalidTokenException;
 import io.github.gagann06.internshiptracker.company.CompanyHasApplicationsException;
 import io.github.gagann06.internshiptracker.company.CompanyNotFoundException;
 import io.github.gagann06.internshiptracker.company.DuplicateCompanyNameException;
@@ -100,8 +100,8 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
     }
 
-    @ExceptionHandler(InvalidVerificationTokenException.class)
-    public ProblemDetail invalidVerificationToken(InvalidVerificationTokenException ex) {
+    @ExceptionHandler(InvalidTokenException.class)
+    public ProblemDetail invalidToken(InvalidTokenException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 

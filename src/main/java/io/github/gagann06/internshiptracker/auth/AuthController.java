@@ -14,10 +14,13 @@ import org.springframework.http.HttpStatus;
 public class AuthController {
     private final AuthService authService;
     private final EmailVerificationService emailVerificationService;
+    private final PasswordResetService passwordResetService;
 
-    public AuthController(AuthService authService, EmailVerificationService emailVerificationService) {
+    public AuthController(AuthService authService, EmailVerificationService emailVerificationService,
+                          PasswordResetService passwordResetService) {
         this.authService = authService;
         this.emailVerificationService = emailVerificationService;
+        this.passwordResetService = passwordResetService;
     }
 
     @PostMapping("/register")
@@ -42,5 +45,17 @@ public class AuthController {
         emailVerificationService.resendVerificationEmail(request.email());
         return ResponseEntity.accepted().build();
     }
-    
+
+    // 202 whether or not the account exists, like resend-verification.
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        passwordResetService.requestReset(request.email());
+        return ResponseEntity.accepted().build();
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        passwordResetService.resetPassword(request.token(), request.newPassword());
+        return ResponseEntity.noContent().build();
+    }
 }

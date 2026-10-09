@@ -16,8 +16,8 @@ Testcontainers, Docker.
 - **Status history**: moving an application to a new stage appends a history entry rather
   than overwriting a field, so the full path of every application is kept.
 - **Accounts**: registration sends an email verification link, and login issues a signed JWT
-  once the address is verified. Every request is scoped to the caller, and one user can never
-  see or change another's data.
+  once the address is verified. Forgotten passwords are reset through an emailed link. Every
+  request is scoped to the caller, and one user can never see or change another's data.
 - **Deadline reminders**: a scheduled job emails each user a daily digest of deadlines
   due in the next three days.
 - **Stats**: a stage funnel, the average time between statuses, and applications per company.
@@ -118,6 +118,8 @@ curl localhost:8080/api/applications -H "Authorization: Bearer <token>"
 | `POST` | `/api/auth/login` | Get an access token |
 | `POST` | `/api/auth/verify-email` | Verify an email address with the token from the link |
 | `POST` | `/api/auth/resend-verification` | Send a new verification link |
+| `POST` | `/api/auth/forgot-password` | Email a password reset link |
+| `POST` | `/api/auth/reset-password` | Set a new password with the token from the link |
 | `PUT` | `/api/account/password` | Change password (needs the current one) |
 | `DELETE` | `/api/account` | Delete the account and all its data (needs the password) |
 | `GET` `POST` | `/api/companies` | List or create companies |
@@ -209,6 +211,22 @@ and have reminders sent to it.
   login checks the password before checking verification, so only the account's owner ever
   learns it is unverified.
 
+### Password reset
+
+Reset links reuse the same token machinery as verification, through `UserTokenService`,
+with two differences:
+
+- **They expire after an hour rather than a day**, because a reset link gives control of the
+  whole account, while a verification link only proves an address.
+- **Completing a reset also verifies the email.** Opening a link sent to the address proves
+  the user receives mail there, and without this an unverified user who reset their password
+  still couldn't log in.
+
+Tokens are looked up by hash **and** purpose, so a verification link can't be used to reset a
+password. Asking for a new link deletes the previous unused one, so only the latest email
+works. Requesting a reset always returns `202`, like resending verification. Access tokens
+issued before a reset stay valid until they expire, as covered under known limitations.
+
 ### Ownership and isolation
 
 Companies and applications each record their owner, and every lookup is "by id **and**
@@ -283,7 +301,7 @@ compilers, build tools and source code. It runs as a non-root user.
 
 ### Testing
 
-158 tests across three levels:
+170 tests across three levels:
 
 - **Domain tests** with no framework, for rules that live in the entities, such as recording
   history and refusing to move an application to another user's company.
@@ -313,7 +331,7 @@ id and an owner id fails visibly instead of passing when the numbers happen to c
 src/main/java/io/github/gagann06/internshiptracker/
 ├── application/   applications, status history, ApplicationStatus
 ├── account/       changing password and deleting the account
-├── auth/          users, registration, email verification, login, JWT and security configuration
+├── auth/          users, registration, email verification, password reset, login, JWT, security
 ├── company/       companies
 ├── error/         maps exceptions to ProblemDetail responses
 ├── reminder/      the scheduled deadline reminder job and email sending

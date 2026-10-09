@@ -128,7 +128,9 @@ async function api(method, path, body) {
     }
     throw new ApiError(response.status, message);
   }
-  return response.status === 204 ? null : response.json();
+  // 204 and 202 come back with no body, so only parse when there is something to parse.
+  const text = await response.text();
+  return text ? JSON.parse(text) : null;
 }
 
 // ---- Messages ----
@@ -156,6 +158,7 @@ function showAuth() {
   $('#applications-view').hidden = true;
   $('#stats-view').hidden = true;
   $('#account-view').hidden = true;
+  $('#reset-view').hidden = true;
   $('#resend-verification').hidden = true;
   $('#auth-view').hidden = false;
 }
@@ -219,14 +222,68 @@ async function resendVerification() {
   }
 }
 
-// Verification emails link to /#verify-email=<token>. The token sits after the #, which the
-// browser never sends to the server, so it stays out of server and proxy logs.
-async function handleVerificationLink() {
-  const match = location.hash.match(/^#verify-email=([\w-]+)$/);
+async function forgotPassword() {
+  const email = $('#auth-form').email.value.trim();
+  if (!email) {
+    notify('Enter your email address, then choose Forgot password.');
+    return;
+  }
+  try {
+    await api('POST', '/api/auth/forgot-password', { email });
+    notify(`If there is an account for ${email}, we've sent it a link to reset the password.`, 'info', true);
+  } catch (error) {
+    notify(error.message);
+  }
+}
+
+// Kept in memory once read from the link, so it isn't left in the address bar.
+let resetToken = null;
+
+function showResetForm(token) {
+  resetToken = token;
+  logout();
+  $('#auth-view').hidden = true;
+  $('#reset-view').hidden = false;
+  $('#reset-form').newPassword.focus();
+}
+
+async function onResetSubmit(event) {
+  event.preventDefault();
+  const form = event.target;
+  const error = $('#reset-form-error');
+  showFormError(error, '');
+
+  if (form.newPassword.value !== form.confirmPassword.value) {
+    showFormError(error, 'The passwords do not match.');
+    return;
+  }
+  try {
+    await api('POST', '/api/auth/reset-password', { token: resetToken, newPassword: form.newPassword.value });
+    form.reset();
+    resetToken = null;
+    showAuth();
+    notify('Password changed. You can log in with your new password.', 'info', true);
+  } catch (failure) {
+    const expired = failure.message === 'This link is invalid or has expired';
+    showFormError(error, expired ? `${failure.message}. Request a new one from the login page.` : failure.message);
+  }
+}
+
+// Emailed links point at /#verify-email=<token> or /#reset-password=<token>. The token sits
+// after the #, which the browser never sends to the server, so it stays out of server and
+// proxy logs. It is removed from the address bar as soon as it has been read.
+async function handleEmailLink() {
+  const match = location.hash.match(/^#(verify-email|reset-password)=([\w-]+)$/);
   if (!match) return;
   history.replaceState(null, '', location.pathname);
+  const [, action, token] = match;
+
+  if (action === 'reset-password') {
+    showResetForm(token);
+    return;
+  }
   try {
-    await api('POST', '/api/auth/verify-email', { token: match[1] });
+    await api('POST', '/api/auth/verify-email', { token });
     notify('Email verified. You can log in now.', 'info', true);
   } catch (error) {
     notify(`${error.message}. Log in to request a new one.`);
@@ -521,6 +578,8 @@ async function init() {
 
   $('#auth-form').addEventListener('submit', onAuthSubmit);
   $('#resend-button').addEventListener('click', resendVerification);
+  $('#forgot-button').addEventListener('click', forgotPassword);
+  $('#reset-form').addEventListener('submit', onResetSubmit);
   $('#application-form').addEventListener('submit', onApplicationSubmit);
   $('#password-form').addEventListener('submit', onPasswordSubmit);
   $('#delete-account-form').addEventListener('submit', onDeleteAccountSubmit);
@@ -534,7 +593,7 @@ async function init() {
 
   if (sessionStorage.getItem(TOKEN_KEY)) showApp();
   else showAuth();
-  await handleVerificationLink();
+  await handleEmailLink();
 }
 
 init();

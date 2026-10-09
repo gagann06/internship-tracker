@@ -39,10 +39,27 @@
           <button type="submit" data-mode="register">Create account</button>
         </div>
       </form>
+      <p class="small">
+        <button type="button" id="forgot-button" class="link">Forgot password?</button>
+      </p>
       <p id="resend-verification" class="muted small" hidden>
         Didn't get the email?
         <button type="button" id="resend-button" class="link">Send it again</button>
       </p>
+    </section>
+
+    <section id="reset-view" class="auth" hidden>
+      <h1>Choose a new password</h1>
+      <form id="reset-form">
+        <label>New password
+          <input type="password" name="newPassword" required minlength="8" maxlength="64" autocomplete="new-password">
+        </label>
+        <label>Confirm new password
+          <input type="password" name="confirmPassword" required autocomplete="new-password">
+        </label>
+        <p id="reset-form-error" class="form-error" hidden></p>
+        <button type="submit" class="primary">Set new password</button>
+      </form>
     </section>
 
     <section id="applications-view" hidden>

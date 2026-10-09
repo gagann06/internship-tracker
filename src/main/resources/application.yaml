@@ -27,6 +27,8 @@ app:
   base-url: ${APP_BASE_URL:http://localhost:8080}
   verification:
     expiry: 24h
+  password-reset:
+    expiry: 1h
   jwt:
     secret: ${JWT_SECRET}
     expiry: 1h
