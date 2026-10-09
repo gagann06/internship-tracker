@@ -66,6 +66,21 @@ To see a reminder email without waiting for the 08:00 run, override the schedule
 APP_REMINDERS_CRON="*/20 * * * * *" ./gradlew bootRun
 ```
 
+### In production
+
+Set `SPRING_PROFILES_ACTIVE=prod` and provide:
+
+| Variable | Purpose |
+|---|---|
+| `SPRING_DATASOURCE_URL`, `_USERNAME`, `_PASSWORD` | PostgreSQL connection |
+| `JWT_SECRET` | Token signing key |
+| `MAIL_HOST`, `MAIL_PORT` (default 587), `MAIL_USERNAME`, `MAIL_PASSWORD` | SMTP server, over STARTTLS |
+| `MAIL_FROM` | Sender address for emails |
+
+The app refuses to start if any of these are missing. The prod profile turns off the API
+documentation and trusts the hosting platform's `X-Forwarded-*` headers. `/actuator/health`
+is public and returns only `UP` or `DOWN`, for the platform's health checks.
+
 ### Tests
 
 ```bash
@@ -242,7 +257,7 @@ compilers, build tools and source code. It runs as a non-root user.
 
 ### Testing
 
-133 tests across three levels:
+138 tests across three levels:
 
 - **Domain tests** with no framework, for rules that live in the entities, such as recording
   history and refusing to move an application to another user's company.

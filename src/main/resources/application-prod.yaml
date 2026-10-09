@@ -1,0 +1,28 @@
+# Active when SPRING_PROFILES_ACTIVE=prod. Values without a default are required, so a
+# missing setting stops the app at startup instead of failing later. The database comes
+# from SPRING_DATASOURCE_URL, _USERNAME and _PASSWORD, as in compose.yaml.
+spring:
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.starttls.required: true
+
+server:
+  # Behind a hosting platform's proxy, take the client's address and https from the
+  # X-Forwarded-* headers it adds.
+  forward-headers-strategy: native
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+app:
+  reminders:
+    from: ${MAIL_FROM}
