@@ -15,6 +15,7 @@ public class User {
     private String email;
     private String passwordHash;
     private Instant createdAt;
+    private Instant emailVerifiedAt;
 
     protected User() {
     }
@@ -23,6 +24,7 @@ public class User {
         this.email = email;
         this.passwordHash = passwordHash;
         this.createdAt = Instant.now();
+        this.emailVerifiedAt = null;
     }
 
     public Long getId() {
@@ -41,7 +43,19 @@ public class User {
         return createdAt;
     }
 
+    public Instant getEmailVerifiedAt() {
+        return emailVerifiedAt;
+    }
+
     public void changePasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
+    }
+
+    public void markVerified(Instant now) {
+        this.emailVerifiedAt = now;
+    }
+
+    public boolean isVerified() {
+        return (this.emailVerifiedAt != null);
     }
 }

@@ -19,7 +19,7 @@ public final class TestDatabase {
      * by accident when the numbers happen to match.
      */
     public static void clean(JdbcTemplate jdbc) {
-        jdbc.execute("TRUNCATE status_changes, applications, companies, users CASCADE");
+        jdbc.execute("TRUNCATE user_tokens, status_changes, applications, companies, users CASCADE");
         jdbc.execute("ALTER TABLE users ALTER COLUMN id RESTART WITH 1000");
     }
 }

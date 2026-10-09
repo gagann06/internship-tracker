@@ -4,6 +4,7 @@ import static io.github.gagann06.internshiptracker.TestAuth.as;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 
 import com.jayway.jsonpath.JsonPath;
 
@@ -60,12 +61,18 @@ class AccountControllerIntegrationTest {
     User bob;
 
     // Real BCrypt hashes, unlike the other integration tests, because these endpoints
-    // check the password and the tests log in afterwards.
+    // check the password and the tests log in afterwards. Verified, because login needs it.
     @BeforeEach
     void setUp() {
         TestDatabase.clean(jdbcTemplate);
-        alice = userRepository.save(new User("alice@example.com", passwordEncoder.encode(ALICE_PASSWORD)));
-        bob = userRepository.save(new User("bob@example.com", passwordEncoder.encode(BOB_PASSWORD)));
+        alice = userRepository.save(verifiedUser("alice@example.com", ALICE_PASSWORD));
+        bob = userRepository.save(verifiedUser("bob@example.com", BOB_PASSWORD));
+    }
+
+    private User verifiedUser(String email, String password) {
+        User user = new User(email, passwordEncoder.encode(password));
+        user.markVerified(Instant.now());
+        return user;
     }
 
     @Test

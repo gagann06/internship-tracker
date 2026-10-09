@@ -17,7 +17,8 @@ import org.springframework.test.web.servlet.assertj.MockMvcTester;
         "MAIL_HOST=smtp.example.com",
         "MAIL_USERNAME=user",
         "MAIL_PASSWORD=password",
-        "MAIL_FROM=reminders@example.com"})
+        "MAIL_FROM=reminders@example.com",
+        "APP_BASE_URL=https://tracker.example.com"})
 @ActiveProfiles("prod")
 @AutoConfigureMockMvc
 class ProdProfileTest {

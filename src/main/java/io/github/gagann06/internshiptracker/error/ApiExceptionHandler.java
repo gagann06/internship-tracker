@@ -5,7 +5,9 @@ import io.github.gagann06.internshiptracker.application.ApplicationNotFoundExcep
 import io.github.gagann06.internshiptracker.application.StatusUnchangedException;
 import io.github.gagann06.internshiptracker.application.UnknownCompanyException;
 import io.github.gagann06.internshiptracker.auth.DuplicateEmailException;
+import io.github.gagann06.internshiptracker.auth.EmailNotVerifiedException;
 import io.github.gagann06.internshiptracker.auth.InvalidCredentialsException;
+import io.github.gagann06.internshiptracker.auth.InvalidVerificationTokenException;
 import io.github.gagann06.internshiptracker.company.CompanyHasApplicationsException;
 import io.github.gagann06.internshiptracker.company.CompanyNotFoundException;
 import io.github.gagann06.internshiptracker.company.DuplicateCompanyNameException;
@@ -95,6 +97,17 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(IncorrectPasswordException.class)
     public ProblemDetail incorrectPassword(IncorrectPasswordException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
+    }
+
+    @ExceptionHandler(InvalidVerificationTokenException.class)
+    public ProblemDetail invalidVerificationToken(InvalidVerificationTokenException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    // 403 rather than 401: the page treats any 401 as an expired session.
+    @ExceptionHandler(EmailNotVerifiedException.class)
+    public ProblemDetail emailNotVerified(EmailNotVerifiedException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
     }
 }

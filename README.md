@@ -15,8 +15,9 @@ Testcontainers, Docker.
 - **Companies and applications**: full CRUD, with an application belonging to a company.
 - **Status history**: moving an application to a new stage appends a history entry rather
   than overwriting a field, so the full path of every application is kept.
-- **Accounts**: registration and login issue a signed JWT. Every request is scoped to the
-  caller, and one user can never see or change another's data.
+- **Accounts**: registration sends an email verification link, and login issues a signed JWT
+  once the address is verified. Every request is scoped to the caller, and one user can never
+  see or change another's data.
 - **Deadline reminders**: a scheduled job emails each user a daily digest of deadlines
   due in the next three days.
 - **Stats**: a stage funnel, the average time between statuses, and applications per company.
@@ -76,6 +77,7 @@ Set `SPRING_PROFILES_ACTIVE=prod` and provide:
 | `JWT_SECRET` | Token signing key |
 | `MAIL_HOST`, `MAIL_PORT` (default 587), `MAIL_USERNAME`, `MAIL_PASSWORD` | SMTP server, over STARTTLS |
 | `MAIL_FROM` | Sender address for emails |
+| `APP_BASE_URL` | The app's public address, used in links sent by email |
 
 The app refuses to start if any of these are missing. The prod profile turns off the API
 documentation and trusts the hosting platform's `X-Forwarded-*` headers. `/actuator/health`
@@ -114,6 +116,8 @@ curl localhost:8080/api/applications -H "Authorization: Bearer <token>"
 |---|---|---|
 | `POST` | `/api/auth/register` | Create an account |
 | `POST` | `/api/auth/login` | Get an access token |
+| `POST` | `/api/auth/verify-email` | Verify an email address with the token from the link |
+| `POST` | `/api/auth/resend-verification` | Send a new verification link |
 | `PUT` | `/api/account/password` | Change password (needs the current one) |
 | `DELETE` | `/api/account` | Delete the account and all its data (needs the password) |
 | `GET` `POST` | `/api/companies` | List or create companies |
@@ -182,6 +186,28 @@ history existed.
 One symmetric key both signs and verifies tokens because a single service does both. A
 public and private key pair would only matter if other services needed to verify tokens
 without being able to create them.
+
+### Email verification
+
+Login is refused until the address is verified, so nobody can register someone else's email
+and have reminders sent to it.
+
+- **Tokens** are 32 bytes from `SecureRandom`, and only their SHA-256 hash is stored, so a
+  leaked database holds no working links. SHA-256 rather than BCrypt: the token is random, so
+  slow hashing adds nothing, and an unsalted hash can be looked up directly. Each token
+  expires after 24 hours, works once, and is replaced when a new one is requested.
+- **The email is sent after the transaction commits**, through a
+  `@TransactionalEventListener`. Sending inside the transaction could email a link for an
+  account that is then rolled back, and would hold a database connection open while waiting
+  on the mail server. A failed send is logged rather than failing the registration, and the
+  user can request another link.
+- **The link opens the web page**, which then posts the token to the API. Email security
+  scanners open links to check them, and a link that verified on a plain `GET` would be used
+  up by the scanner. The token sits after the `#`, which browsers never send to the server,
+  so it stays out of server and proxy logs.
+- **Nothing reveals which emails are registered.** Resending always returns `202`, and
+  login checks the password before checking verification, so only the account's owner ever
+  learns it is unverified.
 
 ### Ownership and isolation
 
@@ -257,7 +283,7 @@ compilers, build tools and source code. It runs as a non-root user.
 
 ### Testing
 
-138 tests across three levels:
+158 tests across three levels:
 
 - **Domain tests** with no framework, for rules that live in the entities, such as recording
   history and refusing to move an application to another user's company.
@@ -286,13 +312,14 @@ id and an owner id fails visibly instead of passing when the numbers happen to c
 ```
 src/main/java/io/github/gagann06/internshiptracker/
 ├── application/   applications, status history, ApplicationStatus
-├── auth/          users, registration, login, JWT and security configuration
+├── account/       changing password and deleting the account
+├── auth/          users, registration, email verification, login, JWT and security configuration
 ├── company/       companies
 ├── error/         maps exceptions to ProblemDetail responses
 ├── reminder/      the scheduled deadline reminder job and email sending
 └── stats/         funnel, transition times, per-company counts
 
-src/main/resources/db/migration/   Flyway migrations V1 to V5
+src/main/resources/db/migration/   Flyway migrations V1 to V6
 ```
 
 Code is grouped by feature rather than by layer, so everything for one feature sits together.

@@ -24,5 +24,6 @@ springdoc:
     enabled: false
 
 app:
+  base-url: ${APP_BASE_URL}
   reminders:
     from: ${MAIL_FROM}

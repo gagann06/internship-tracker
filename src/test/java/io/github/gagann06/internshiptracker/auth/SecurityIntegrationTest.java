@@ -130,6 +130,7 @@ class SecurityIntegrationTest {
                 """.formatted(email, password);
         assertThat(mvc.post().uri("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content(body))
                 .hasStatus(HttpStatus.CREATED);
+        jdbcTemplate.update("UPDATE users SET email_verified_at = now() WHERE email = ?", email);
         MvcTestResult login = mvc.post().uri("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON).content(body).exchange();
         assertThat(login).hasStatusOk();

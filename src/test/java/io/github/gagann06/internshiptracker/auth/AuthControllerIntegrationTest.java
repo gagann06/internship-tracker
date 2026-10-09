@@ -129,6 +129,7 @@ class AuthControllerIntegrationTest {
     @Test
     void loginWithCorrectPasswordReturnsABearerTokenForThatUser() throws Exception {
         assertThat(register("gagan@example.com", "correct-horse-battery")).hasStatus(HttpStatus.CREATED);
+        markVerified("gagan@example.com");
         Long userId = userRepository.findByEmailIgnoreCase("gagan@example.com").orElseThrow().getId();
 
         MvcTestResult result = login("gagan@example.com", "correct-horse-battery").exchange();
@@ -147,6 +148,7 @@ class AuthControllerIntegrationTest {
     @Test
     void loginEmailIsCaseInsensitive() {
         assertThat(register("gagan@example.com", "correct-horse-battery")).hasStatus(HttpStatus.CREATED);
+        markVerified("gagan@example.com");
 
         assertThat(login("GAGAN@Example.COM", "correct-horse-battery")).hasStatusOk();
     }
@@ -167,6 +169,11 @@ class AuthControllerIntegrationTest {
     @Test
     void loginWithBlankPasswordReturns400() {
         assertThat(login("gagan@example.com", "")).hasStatus(HttpStatus.BAD_REQUEST);
+    }
+
+    // Stands in for clicking the emailed link; EmailVerificationIntegrationTest covers the real flow.
+    private void markVerified(String email) {
+        jdbcTemplate.update("UPDATE users SET email_verified_at = now() WHERE email = ?", email);
     }
 
     private MockMvcTester.MockMvcRequestBuilder login(String email, String password) {

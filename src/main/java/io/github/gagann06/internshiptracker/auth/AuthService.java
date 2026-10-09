@@ -10,11 +10,13 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final TokenService tokenService;
+    private final EmailVerificationService emailVerificationService;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, TokenService tokenService) {
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, TokenService tokenService, EmailVerificationService emailVerificationService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenService = tokenService;
+        this.emailVerificationService = emailVerificationService;
     }
 
     @Transactional 
@@ -24,9 +26,10 @@ public class AuthService {
             throw new DuplicateEmailException(trimmedEmail);
         }
 
-        User user = new User(trimmedEmail, passwordEncoder.encode(request.password()));
+        User user = userRepository.save(new User(trimmedEmail, passwordEncoder.encode(request.password())));
+        emailVerificationService.sendVerificationEmail(user);
 
-        return userRepository.save(user);
+        return user;
     }
 
     @Transactional(readOnly = true)
@@ -36,6 +39,10 @@ public class AuthService {
 
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             throw new InvalidCredentialsException();
+        }
+
+        if (!user.isVerified()) {
+            throw new EmailNotVerifiedException();
         }
 
         return tokenService.issue(user);

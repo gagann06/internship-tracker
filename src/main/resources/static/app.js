@@ -135,13 +135,14 @@ async function api(method, path, body) {
 
 let noticeTimer;
 
-function notify(message, kind = 'error') {
+// Info messages fade after a few seconds unless they ask the user to do something.
+function notify(message, kind = 'error', persist = false) {
   const notice = $('#notice');
   clearTimeout(noticeTimer);
   notice.textContent = message;
   notice.className = `notice ${kind === 'info' ? 'info' : ''}`;
   notice.hidden = !message;
-  if (message && kind === 'info') noticeTimer = setTimeout(() => (notice.hidden = true), 3000);
+  if (message && kind === 'info' && !persist) noticeTimer = setTimeout(() => (notice.hidden = true), 3000);
 }
 
 function reportError(error) {
@@ -155,6 +156,7 @@ function showAuth() {
   $('#applications-view').hidden = true;
   $('#stats-view').hidden = true;
   $('#account-view').hidden = true;
+  $('#resend-verification').hidden = true;
   $('#auth-view').hidden = false;
 }
 
@@ -180,9 +182,16 @@ async function onAuthSubmit(event) {
   const form = event.target;
   const mode = event.submitter?.dataset.mode ?? 'login';
   const credentials = { email: form.email.value.trim(), password: form.password.value };
+  $('#resend-verification').hidden = true;
 
   try {
-    if (mode === 'register') await api('POST', '/api/auth/register', credentials);
+    if (mode === 'register') {
+      await api('POST', '/api/auth/register', credentials);
+      form.password.value = '';
+      notify(`Account created. Open the link we sent to ${credentials.email} to verify your email, then log in.`, 'info', true);
+      $('#resend-verification').hidden = false;
+      return;
+    }
     const { accessToken } = await api('POST', '/api/auth/login', credentials);
     sessionStorage.setItem(TOKEN_KEY, accessToken);
     sessionStorage.setItem(EMAIL_KEY, credentials.email.toLowerCase());
@@ -191,6 +200,36 @@ async function onAuthSubmit(event) {
     await showApp();
   } catch (error) {
     notify(error.message);
+    // 403 from login means the password was right but the email is not verified yet.
+    if (error.status === 403) $('#resend-verification').hidden = false;
+  }
+}
+
+async function resendVerification() {
+  const email = $('#auth-form').email.value.trim();
+  if (!email) {
+    notify('Enter your email address first.');
+    return;
+  }
+  try {
+    await api('POST', '/api/auth/resend-verification', { email });
+    notify(`If ${email} still needs verifying, a new link is on its way.`, 'info', true);
+  } catch (error) {
+    notify(error.message);
+  }
+}
+
+// Verification emails link to /#verify-email=<token>. The token sits after the #, which the
+// browser never sends to the server, so it stays out of server and proxy logs.
+async function handleVerificationLink() {
+  const match = location.hash.match(/^#verify-email=([\w-]+)$/);
+  if (!match) return;
+  history.replaceState(null, '', location.pathname);
+  try {
+    await api('POST', '/api/auth/verify-email', { token: match[1] });
+    notify('Email verified. You can log in now.', 'info', true);
+  } catch (error) {
+    notify(`${error.message}. Log in to request a new one.`);
   }
 }
 
@@ -475,12 +514,13 @@ async function onDeleteAccountSubmit(event) {
 
 // ---- Start up ----
 
-function init() {
+async function init() {
   const statusOptions = () => STATUSES.map((value) => el('option', { value, textContent: label(value) }));
   $('#status-filter').append(...statusOptions());
   $('#application-form').status.append(...statusOptions());
 
   $('#auth-form').addEventListener('submit', onAuthSubmit);
+  $('#resend-button').addEventListener('click', resendVerification);
   $('#application-form').addEventListener('submit', onApplicationSubmit);
   $('#password-form').addEventListener('submit', onPasswordSubmit);
   $('#delete-account-form').addEventListener('submit', onDeleteAccountSubmit);
@@ -494,6 +534,7 @@ function init() {
 
   if (sessionStorage.getItem(TOKEN_KEY)) showApp();
   else showAuth();
+  await handleVerificationLink();
 }
 
 init();
