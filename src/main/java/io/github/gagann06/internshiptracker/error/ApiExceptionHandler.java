@@ -1,5 +1,6 @@
 package io.github.gagann06.internshiptracker.error;
 
+import io.github.gagann06.internshiptracker.account.IncorrectPasswordException;
 import io.github.gagann06.internshiptracker.application.ApplicationNotFoundException;
 import io.github.gagann06.internshiptracker.application.StatusUnchangedException;
 import io.github.gagann06.internshiptracker.application.UnknownCompanyException;
@@ -90,5 +91,10 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(InvalidCredentialsException.class)
     public ProblemDetail invalidCredentials(InvalidCredentialsException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
+    }
+
+    @ExceptionHandler(IncorrectPasswordException.class)
+    public ProblemDetail incorrectPassword(IncorrectPasswordException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
     }
 }

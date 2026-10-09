@@ -1,6 +1,7 @@
 package io.github.gagann06.internshiptracker.application;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -29,4 +30,8 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
     List<Application> findDueBetween(@Param("from") LocalDate from,
                                     @Param("to") LocalDate to,
                                     @Param("excluded") Collection<ApplicationStatus> excluded);
+
+    @Modifying
+    @Query("delete from Application a where a.ownerId = :ownerId")
+    void deleteAllOwnedBy(@Param("ownerId") Long ownerId);
 }
