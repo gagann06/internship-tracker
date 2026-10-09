@@ -27,7 +27,8 @@
       <p class="muted">Keep track of every application, from first click to offer.</p>
       <form id="auth-form">
         <label>Email
-          <input type="email" name="email" required autocomplete="username">
+          <input type="email" name="email" required autocomplete="username"
+                 pattern=".+@.+\.[A-Za-z]{2,}" title="An email address such as name@gmail.com">
         </label>
         <label>Password
           <input type="password" name="password" required minlength="8" autocomplete="current-password">

@@ -7,6 +7,8 @@ import io.github.gagann06.internshiptracker.TestcontainersConfiguration;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -84,10 +86,21 @@ class AuthControllerIntegrationTest {
         assertThat(userRepository.count()).isEqualTo(1);
     }
 
-    @Test
-    void invalidEmailReturns400() {
-        assertThat(register("not-an-email", "correct-horse-battery"))
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "not-an-email", "gagan@gmail", "gagan@localhost", "gagan@gmail.c", "gagan@gmail.123",
+            "gagan@@gmail.com", "@gmail.com", "gagan@.com", "gagan @gmail.com"})
+    void invalidEmailReturns400(String email) {
+        assertThat(register(email, "correct-horse-battery"))
                 .hasStatus(HttpStatus.BAD_REQUEST);
+        assertThat(userRepository.count()).isZero();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"gagan@gmail.com", "gagan@outlook.co.uk", "u1234567@live.warwick.ac.uk", "first.last+tracker@example.org"})
+    void validEmailReturns201(String email) {
+        assertThat(register(email, "correct-horse-battery"))
+                .hasStatus(HttpStatus.CREATED);
     }
 
     @Test
