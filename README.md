@@ -318,6 +318,9 @@ id and an owner id fails visibly instead of passing when the numbers happen to c
 - **CSV import** of existing applications is planned.
 - **Tokens cannot be revoked** before they expire. Short expiry limits the risk; refresh
   tokens would be the next step.
+- **No rate limiting** on login or the endpoints that send email. Passwords are BCrypt
+  hashed, which makes guessing slow, but repeated reset or verification requests could still
+  flood an inbox. A per-IP limit with Bucket4j would be the next step.
 - **The reminder job assumes a single instance.** Running several would send duplicate
   emails; a database lock such as ShedLock would fix that.
 - **Login timing** differs slightly between an unknown email and a wrong password, which
