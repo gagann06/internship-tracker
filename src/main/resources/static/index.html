@@ -13,6 +13,7 @@
     <nav>
       <button class="tab" data-view="applications">Applications</button>
       <button class="tab" data-view="stats">Stats</button>
+      <button class="tab" data-view="account">Account</button>
     </nav>
     <span class="spacer"></span>
     <span id="user-email" class="muted"></span>
@@ -78,6 +79,33 @@
 
       <h2>Applications per company</h2>
       <div class="table-wrap"><table class="grid" id="per-company"></table></div>
+    </section>
+
+    <section id="account-view" class="account" hidden>
+      <h2>Change password</h2>
+      <form id="password-form">
+        <label>Current password
+          <input type="password" name="currentPassword" required autocomplete="current-password">
+        </label>
+        <label>New password
+          <input type="password" name="newPassword" required minlength="8" maxlength="64" autocomplete="new-password">
+        </label>
+        <label>Confirm new password
+          <input type="password" name="confirmPassword" required autocomplete="new-password">
+        </label>
+        <p id="password-form-error" class="form-error" hidden></p>
+        <button type="submit" class="primary">Change password</button>
+      </form>
+
+      <h2>Delete account</h2>
+      <p class="muted small">Permanently deletes your account with every company, application and status history. This cannot be undone.</p>
+      <form id="delete-account-form">
+        <label>Password
+          <input type="password" name="password" required autocomplete="current-password">
+        </label>
+        <p id="delete-account-form-error" class="form-error" hidden></p>
+        <button type="submit" class="danger">Delete account</button>
+      </form>
     </section>
   </main>
 

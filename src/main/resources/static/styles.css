@@ -28,11 +28,12 @@ h2 { font-size: 15px; font-weight: 600; margin: 28px 0 8px; }
 .topbar {
   display: flex;
   align-items: center;
-  gap: 20px;
+  flex-wrap: wrap;
+  gap: 4px 20px;
   padding: 10px 20px;
   border-bottom: 1px solid var(--border);
 }
-.brand { font-weight: 600; }
+.brand { font-weight: 600; white-space: nowrap; }
 .topbar nav { display: flex; gap: 4px; }
 .tab {
   border: 0;
@@ -57,6 +58,8 @@ button {
 button:hover { background: var(--subtle); }
 button.primary { background: var(--text); border-color: var(--text); color: #fff; }
 button.primary:hover { background: #32383f; }
+button.danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+button.danger:hover { background: #a40e26; }
 button.link {
   border: 0;
   background: none;
@@ -150,6 +153,11 @@ select.status {
 /* Stats */
 #stats-view .table-wrap { max-width: 680px; }
 #stats-view h2:first-child { margin-top: 0; }
+
+/* Account */
+.account { max-width: 360px; }
+.account h2:first-child { margin-top: 0; }
+.account form { margin-bottom: 8px; }
 
 /* Stats bars */
 .bar {

@@ -154,6 +154,7 @@ function showAuth() {
   $('#topbar').hidden = true;
   $('#applications-view').hidden = true;
   $('#stats-view').hidden = true;
+  $('#account-view').hidden = true;
   $('#auth-view').hidden = false;
 }
 
@@ -164,13 +165,14 @@ async function showApp() {
   await switchView(state.view);
 }
 
-function logout(message) {
+function logout(message, kind) {
   sessionStorage.removeItem(TOKEN_KEY);
   sessionStorage.removeItem(EMAIL_KEY);
   state.applications = [];
   state.companies = [];
+  state.view = 'applications';
   showAuth();
-  notify(message ?? '');
+  notify(message ?? '', kind);
 }
 
 async function onAuthSubmit(event) {
@@ -199,9 +201,10 @@ async function switchView(view) {
   document.querySelectorAll('.tab').forEach((tab) => tab.classList.toggle('active', tab.dataset.view === view));
   $('#applications-view').hidden = view !== 'applications';
   $('#stats-view').hidden = view !== 'stats';
+  $('#account-view').hidden = view !== 'account';
   try {
     if (view === 'applications') await loadApplications();
-    else await loadStats();
+    else if (view === 'stats') await loadStats();
   } catch (error) {
     reportError(error);
   }
@@ -424,6 +427,52 @@ function renderPerCompany(counts) {
   $('#per-company').replaceChildren(headerRow(['Company'], ['Applications', 'num']), el('tbody', {}, rows));
 }
 
+// ---- Account ----
+
+function showFormError(element, message) {
+  element.textContent = message;
+  element.hidden = !message;
+}
+
+async function onPasswordSubmit(event) {
+  event.preventDefault();
+  const form = event.target;
+  const error = $('#password-form-error');
+  showFormError(error, '');
+
+  if (form.newPassword.value !== form.confirmPassword.value) {
+    showFormError(error, 'The new passwords do not match.');
+    return;
+  }
+  try {
+    await api('PUT', '/api/account/password', {
+      currentPassword: form.currentPassword.value,
+      newPassword: form.newPassword.value,
+    });
+    form.reset();
+    notify('Password changed.', 'info');
+  } catch (failure) {
+    if (failure.status !== 401) showFormError(error, failure.message);
+  }
+}
+
+async function onDeleteAccountSubmit(event) {
+  event.preventDefault();
+  const form = event.target;
+  const error = $('#delete-account-form-error');
+  showFormError(error, '');
+
+  const email = sessionStorage.getItem(EMAIL_KEY);
+  if (!confirm(`Permanently delete ${email} and all of its data?`)) return;
+  try {
+    await api('DELETE', '/api/account', { password: form.password.value });
+    form.reset();
+    logout('Your account has been deleted.', 'info');
+  } catch (failure) {
+    if (failure.status !== 401) showFormError(error, failure.message);
+  }
+}
+
 // ---- Start up ----
 
 function init() {
@@ -433,6 +482,8 @@ function init() {
 
   $('#auth-form').addEventListener('submit', onAuthSubmit);
   $('#application-form').addEventListener('submit', onApplicationSubmit);
+  $('#password-form').addEventListener('submit', onPasswordSubmit);
+  $('#delete-account-form').addEventListener('submit', onDeleteAccountSubmit);
   $('#logout').addEventListener('click', () => logout());
   $('#add-application').addEventListener('click', () => openApplicationDialog(null));
   $('#search').addEventListener('input', renderApplications);

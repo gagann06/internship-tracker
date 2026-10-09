@@ -99,6 +99,8 @@ curl localhost:8080/api/applications -H "Authorization: Bearer <token>"
 |---|---|---|
 | `POST` | `/api/auth/register` | Create an account |
 | `POST` | `/api/auth/login` | Get an access token |
+| `PUT` | `/api/account/password` | Change password (needs the current one) |
+| `DELETE` | `/api/account` | Delete the account and all its data (needs the password) |
 | `GET` `POST` | `/api/companies` | List or create companies |
 | `GET` `PUT` `DELETE` | `/api/companies/{id}` | Read, replace or delete a company |
 | `GET` `POST` | `/api/applications` | List or create applications |
@@ -240,7 +242,7 @@ compilers, build tools and source code. It runs as a non-root user.
 
 ### Testing
 
-105 tests across three levels:
+133 tests across three levels:
 
 - **Domain tests** with no framework, for rules that live in the entities, such as recording
   history and refusing to move an application to another user's company.
