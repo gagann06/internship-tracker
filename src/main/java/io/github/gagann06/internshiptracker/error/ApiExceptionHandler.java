@@ -9,14 +9,43 @@ import io.github.gagann06.internshiptracker.company.CompanyHasApplicationsExcept
 import io.github.gagann06.internshiptracker.company.CompanyNotFoundException;
 import io.github.gagann06.internshiptracker.company.DuplicateCompanyNameException;
 
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
-public class ApiExceptionHandler {
+public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
+
+    public record FieldViolation(String field, String message) {}
+
+    @Override
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(
+            MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        List<FieldViolation> violations = ex.getBindingResult().getFieldErrors().stream()
+                .map(error -> new FieldViolation(error.getField(), error.getDefaultMessage()))
+                .sorted(Comparator.comparing(FieldViolation::field).thenComparing(FieldViolation::message))
+                .toList();
+
+        ProblemDetail problem = ex.getBody();
+        problem.setDetail(violations.stream()
+                .map(violation -> violation.field() + ": " + violation.message())
+                .collect(Collectors.joining("; ")));
+        problem.setProperty("errors", violations);
+        return handleExceptionInternal(ex, problem, headers, status, request);
+    }
 
     @ExceptionHandler(CompanyNotFoundException.class)
     public ProblemDetail companyNotFound(CompanyNotFoundException ex) {

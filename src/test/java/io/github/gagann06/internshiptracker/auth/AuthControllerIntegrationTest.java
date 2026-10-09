@@ -96,6 +96,22 @@ class AuthControllerIntegrationTest {
         assertThat(userRepository.count()).isZero();
     }
 
+    @Test
+    void validationErrorNamesEveryInvalidFieldWithoutEchoingValues() {
+        assertThat(register("gagan@gmail", "short"))
+                .hasStatus(HttpStatus.BAD_REQUEST)
+                .bodyJson()
+                .satisfies(json -> {
+                    assertThat(json).extractingPath("$.detail").isEqualTo(
+                            "email: must be a well-formed email address; password: size must be between 8 and 64");
+                    assertThat(json).extractingPath("$.errors[*].field").asArray()
+                            .containsExactly("email", "password");
+                    assertThat(json).extractingPath("$.errors[1].message")
+                            .isEqualTo("size must be between 8 and 64");
+                    assertThat(json).doesNotHavePath("$.errors[0].rejectedValue");
+                });
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"gagan@gmail.com", "gagan@outlook.co.uk", "u1234567@live.warwick.ac.uk", "first.last+tracker@example.org"})
     void validEmailReturns201(String email) {
