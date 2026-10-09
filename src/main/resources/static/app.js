@@ -11,7 +11,7 @@ const STATUSES = [
   'OFFER', 'REJECTED', 'WITHDRAWN', 'EXPIRED',
 ];
 const FINISHED = new Set(['REJECTED', 'WITHDRAWN', 'EXPIRED']);
-const SPECIAL_LABELS = { HIREVUE: 'HireVue', HIREVUE_COMPLETED: 'HireVue completed' };
+const SPECIAL_LABELS = { HIREVUE: 'HireVue', HIREVUE_COMPLETED: 'HireVue Completed' };
 
 // sessionStorage rather than localStorage: the token is gone when the tab closes,
 // which limits how long a leaked token stays useful.
@@ -39,8 +39,9 @@ function el(tag, props = {}, ...children) {
 
 function label(status) {
   if (SPECIAL_LABELS[status]) return SPECIAL_LABELS[status];
-  const words = status.toLowerCase().replaceAll('_', ' ');
-  return words[0].toUpperCase() + words.slice(1);
+  return status.toLowerCase().split('_')
+    .map((word) => word[0].toUpperCase() + word.slice(1))
+    .join(' ');
 }
 
 function statusGroup(status) {
@@ -74,8 +75,8 @@ function formatDateTime(iso) {
 }
 
 function formatDuration(days) {
-  if (days < 1) return 'under a day';
-  return days === 1 ? '1 day' : `${days} days`;
+  if (days < 1) return 'Under a Day';
+  return days === 1 ? '1 Day' : `${days} Days`;
 }
 
 function daysUntil(iso) {
@@ -405,7 +406,7 @@ function renderFunnel(steps) {
 function renderTransitions(transitions) {
   const rows = transitions.length
     ? transitions.map((transition) => el('tr', {},
-      el('td', { textContent: `${label(transition.fromStatus)} to ${label(transition.toStatus)}` }),
+      el('td', { textContent: `${label(transition.fromStatus)} → ${label(transition.toStatus)}` }),
       el('td', { class: 'num', textContent: formatDuration(transition.averageDays) }),
       el('td', { class: 'num muted', textContent: transition.transitions })))
     : [emptyRow(3, 'Nothing yet. This fills in as your applications move between statuses.')];
