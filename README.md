@@ -252,8 +252,9 @@ transaction, so it either succeeds completely or fails without leaving anything 
 - **Uniqueness lives in the database.** Friendly checks in the services give clear `409`
   messages, but unique indexes are the real guarantee, since two concurrent requests can
   both pass a check before either inserts.
-- **The N+1 problem** was measured (four queries to list three applications) and fixed with
-  a `join fetch`, giving one query regardless of list size.
+- **The N+1 problem** was measured and fixed with a `join fetch`: listing applications
+  across 50 companies took 51 queries and now takes one, whatever the list size. A test
+  counts the SQL statements Hibernate sends, so the problem cannot quietly return.
 - **Open Session In View is off.** Every database read happens inside a service
   transaction, so lazy loading cannot quietly run extra queries while a response is being
   written.
@@ -281,6 +282,10 @@ logged without stopping the others.
   to find the time since each application's previous change. JPQL cannot express window
   functions, so this is the one place the code is tied to PostgreSQL. Native queries are not
   checked at startup the way JPQL is, which is why this one has its own tests.
+- **Measured** with `EXPLAIN ANALYZE` on a 100,000-row history table: the query takes about
+  1 ms for a user with 100 applications, because the indexes on `applications (user_id)`
+  and `status_changes (application_id)` mean the cost follows the user's own rows and not
+  the table's size. A single user owning all 100,000 rows takes about 200 ms.
 
 ### Web interface
 
@@ -301,7 +306,8 @@ compilers, build tools and source code. It runs as a non-root user.
 
 ### Testing
 
-170 tests across three levels:
+172 tests across three levels, covering 98% of lines (JaCoCo report in
+`build/reports/jacoco/test/html` after a build):
 
 - **Domain tests** with no framework, for rules that live in the entities, such as recording
   history and refusing to move an application to another user's company.
