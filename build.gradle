@@ -50,6 +50,12 @@ tasks.named('test') {
 	finalizedBy tasks.named('jacocoTestReport')
 }
 
+// What Heroku runs to build the app (GRADLE_TASK=stage). Only the jar: the tests need
+// Docker for Testcontainers, which Heroku's build doesn't have, and CI has already run them.
+tasks.register('stage') {
+	dependsOn tasks.named('bootJar')
+}
+
 // Coverage report at build/reports/jacoco/test/html/index.html after every test run.
 tasks.named('jacocoTestReport') {
 	dependsOn tasks.named('test')
